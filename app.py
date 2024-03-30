@@ -1,4 +1,21 @@
-from flask import Flask
+import dash
+from Layouts.user_input import layout, register_callbacks
+
+app = dash.Dash(__name__)
+server = app.server
+
+# Set the layout
+app.layout = layout
+
+# Register callbacks
+register_callbacks(app)
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
+
+
+
+"""from flask import Flask
 app= Flask(__name__)
 @app.route("/")
 def home():
@@ -6,5 +23,5 @@ def home():
 
 if __name__=="__main__":
     app.run(debug=True)
-
+"""
 
