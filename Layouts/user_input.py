@@ -4,7 +4,7 @@ import dash
 from dash.dependencies import Input, Output
 import requests
 from azure.identity import ClientSecretCredential
-from azure.eventgrid import EventGridPublisherClient,EventGridEvent
+from azure.eventgrid import EventGridPublisherClient
 from azure.core.messaging import CloudEvent
 
 event_count=0
