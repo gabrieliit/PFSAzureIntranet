@@ -5,13 +5,13 @@ dash_obj = dash.Dash(__name__)
 app = dash_obj.server #default azure guincorn startup script target a variable called app to load webapp
 
 # Set the layout
-app.layout = layout
+dash_obj.layout = layout
 
 # Register callbacks
-register_callbacks(app)
+register_callbacks(dash_obj)
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    dash_obj.run_server(debug=True)
 
 
 
