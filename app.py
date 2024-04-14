@@ -1,8 +1,8 @@
 import dash
 from Layouts.user_input import layout, register_callbacks
 
-app = dash.Dash(__name__)
-server = app.server
+dash_obj = dash.Dash(__name__)
+app = dash_obj.server #default azure guincorn startup script target a variable called app to load webapp
 
 # Set the layout
 app.layout = layout
