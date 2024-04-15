@@ -17,7 +17,7 @@ def main(event: func.EventGridEvent):
     (
         source="https://pfsintranet-azfnapp.azurewebsites.net/runtime/webhooks/EventGrid?functionName=EHDashUITestEvent&code=SNN3nOoTWKfxZb4KnlqhMxmQ9RknKRwupW7MWyUNqoNOAzFukWYaFQ==",
         type="fn.response.test",
-        data=event
+        data=result
     )
     #send response event back to event grid
     topic_endpoint = "https://pfsintranetdashuicloudevents.southindia-1.eventgrid.azure.net/api/events"
