@@ -4,7 +4,8 @@ from azure.core.messaging import CloudEvent
 from azure.identity import ClientSecretCredential
 from azure.eventgrid import EventGridPublisherClient
 
-def main(event: func.EventGridEvent):
+
+def main(event:func.EventGridEvent):
     result = json.dumps({
         'id': event.id,
         'data': event.get_json(),

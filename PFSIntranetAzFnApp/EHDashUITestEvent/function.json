@@ -9,6 +9,7 @@
       "topicEndpointUri": "https://pfsintranetdashuicloudevents.southindia-1.eventgrid.azure.net/api/events",
       "topicKeySettingName": "AzureWebJobsEventGridExtensionConfig",
       "eventSchema": "cloudeventsV1_0",
+      "authLevel": "anonymous",
       "eventPattern":
       {
         "eventType": "test_event"
