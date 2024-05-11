@@ -88,7 +88,7 @@ def pub_event(event_type,event_data):
 
 
 def invoke_REST_API_fn(string):
-        function_url = 'https://pfsintranet-azfnapp.azurewebsites.net/api/MyFirstAzFn?code=rnLzSmD_uHrrvGGXbEN5O00tvSlO1bsCe1gj4APzTKuCAzFuO4yeDQ=='
+        function_url = 'https://pfsintranet-azfnapp.azurewebsites.net/api/http_trigger_sample2?'
         payload = {'name': string}
         response = requests.post(function_url, json=payload)
         if response.status_code == 200:
