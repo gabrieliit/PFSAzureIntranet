@@ -6,34 +6,40 @@ import requests
 from azure.identity import ClientSecretCredential
 from azure.eventgrid import EventGridPublisherClient
 from azure.core.messaging import CloudEvent
+#import required project modules
+from Layouts import app_data as ad
 
 event_count=0
-# Define the layout
-layout = html.Div([
+layout=[            
+    dcc.Location(id='home_url', refresh=False),
     html.H1('Dash App'),
-    dcc.Input(id='input-data', type='text', placeholder='Enter data'),
-    html.Button('SubmitREST', id='submit-button-REST', n_clicks=0),
-    html.Div(id='output-message'),
+    dcc.Input(id='home_input_data', type='text', placeholder='Enter data'),
+    html.Button('SubmitREST', id='home_submit_button_REST', n_clicks=0),
+    html.Div(id='home_output_message'),
     html.Div(
     [
-        html.Label(f"Events published to grid"),
-        html.Label(event_count, id='event-count')
+        
+        html.Label(event_count, id='home_event_count')
     ]
     ),
-    html.Button('SubmitEvent', id='submit-button-Event', n_clicks=0),
-    html.Label(id="event-pub-status")
-])
+    html.Button('SubmitEvent', id='home_submit_button_Event', n_clicks=0),
+    html.Label(id="home_event_pub_status"),
+    html.Button('Get Last Post Request',id='home_btn_get_last_post_req'),
+    html.Label(id="home_lbl_last_post_request"),
+    html.Div(id="home_layout_extension",children=[])
+]
+
 #credentials
 subscription_id = 'your_subscription_id'
 resource_group_name = 'your_resource_group_name'
 topic_name = 'DashUI'
 
-# Define the callbacks
+#Define the callbacks
 def register_callbacks(app):
     @app.callback(
-        Output('output-message', 'children'),
-        [Input('submit-button-REST', 'n_clicks')],
-        [dash.dependencies.State('input-data', 'value')]
+        Output('home_output_message', 'children'),
+        [Input('home_submit_button_REST', 'n_clicks')],
+        [dash.dependencies.State('home_input_data', 'value')]
     )
     def make_upper_case(n_clicks, user_input):
         if n_clicks > 0:
@@ -50,10 +56,22 @@ def register_callbacks(app):
                 return msg
         else:
             return ""
+        
     @app.callback(
-        [Output('event-count', 'children'),Output('event-pub-status','children')],
-        [Input('submit-button-Event', 'n_clicks')],
-        [dash.dependencies.State('event-count', 'children')]
+        Output("home_lbl_last_post_request", 'children'),
+        [Input('home_btn_get_last_post_req', 'n_clicks')],
+        prevent_inital_call=True
+    )
+    def get_last_post_req(n_clicks):
+        if n_clicks is not None and n_clicks > 0:
+            # get last post reqeust
+            return ad.post_request
+        else:
+            return ""
+    @app.callback(
+        [Output('home_event_count', 'children'),Output('home_event_pub_status','children')],
+        [Input('home_submit_button_Event', 'n_clicks')],
+        [dash.dependencies.State('home_event_count', 'children')]
     )
     def send_event_to_grid(nclicks,event_count):
         pub_status=""
