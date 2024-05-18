@@ -30,12 +30,13 @@ def register_callbacks(app):
         
     @app.server.route('/webhook',methods=['POST'])
     def handle_post():
-        data=flask.request.json
+        data=flask.request.get_json()
+        print(data)
         try:#handle post from azure validation event 
             # Check for the validationToken in the event data
-            validation_token = data['data']['validationToken']
+            validation_code = data[0]['data']['validationCode']
             # Respond with the validation token to complete the validation process
-            return flask.jsonify(validationResponse=validation_token)
+            return flask.jsonify({"validationResponse":validation_code})
         except KeyError:#handle post from other events
             app_data.post_request["json"]=data
             app_data.post_request["headers"]=flask.request.headers
