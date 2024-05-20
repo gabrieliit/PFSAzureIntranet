@@ -7,6 +7,7 @@ from dash.dependencies import Input, Output
 from Layouts import app_data
 from Layouts import homepage
 import flask
+import logging
 
 
 #Define layout (defined within a function in case it needs to be paramterised later to accept layout elements as params)
@@ -31,7 +32,7 @@ def register_callbacks(app):
     @app.server.route('/webhook',methods=['POST'])
     def handle_post():
         data=flask.request.get_json()
-        print(data)
+        logging.info(str(data))
         try:#handle post from azure validation event 
             # Check for the validationToken in the event data
             validation_code = data[0]['data']['validationCode']
