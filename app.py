@@ -3,7 +3,7 @@ from Layouts import homepage
 from index import register_callbacks
 import flask
 import logging
-from Layouts import app_data
+import json
 
 dash_obj = dash.Dash(__name__)
 app = dash_obj.server #default azure guincorn startup script target a variable called app to load webapp
@@ -15,6 +15,10 @@ register_callbacks(dash_obj)
 def handle_post():
     req_json=flask.request.get_json()[0]
     print(req_json)
+    filename="app_data.txt"
+    # Write JSON data into a file
+    with open(filename, 'w') as file:
+        json.dump(req_json, file, indent=4)
     logging.info(str(req_json)) 
     if req_json['eventType']=="Microsoft.EventGrid.SubscriptionValidationEvent":
             # Check for the validationToken in the event data

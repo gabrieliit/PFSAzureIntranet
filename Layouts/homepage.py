@@ -6,8 +6,9 @@ import requests
 from azure.identity import ClientSecretCredential
 from azure.eventgrid import EventGridPublisherClient
 from azure.core.messaging import CloudEvent
+import json
 #import required project modules
-from Layouts import app_data as ad
+#from Layouts import app_data as ad
 
 event_count=0
 layout=[            
@@ -65,7 +66,11 @@ def register_callbacks(app):
     def get_last_post_req(n_clicks):
         if n_clicks is not None and n_clicks > 0:
             # get last post reqeust
-            return ad.post_request
+            filename="app_data.txt"
+            # Read JSON data from a file and convert it into a dictionary
+            with open(filename, 'r') as file:
+                data = json.load(file)
+            return data.post_request
         else:
             return ""
     @app.callback(

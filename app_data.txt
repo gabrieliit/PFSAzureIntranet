@@ -1,0 +1,12 @@
+{
+    "data": {
+        "message": "this is a test"
+    },
+    "dataVersion": "1",
+    "eventTime": "2022-10-28T04:23:35.1981776Z",
+    "eventType": "Microsoft.EventGrid.Event",
+    "id": "2d1781af-3a4c-4d7c-bd0c-e34b19da4e66",
+    "metadataVersion": "1",
+    "subject": "TestEvent-NonValidation",
+    "topic": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
