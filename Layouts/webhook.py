@@ -4,7 +4,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 from dash.dependencies import Input, Output
 # import required project modules
-from Layouts import app_data
+#from Layouts import app_data
 from Layouts import homepage
 import flask
 import logging

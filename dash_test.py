@@ -4,7 +4,7 @@ from app import dash_obj as app
 def test_post_req_azureEG_validation_event():
     response = app.server.test_client().post(
         'http://127.0.0.1:8050/webhook',
-        #'https://pfsintranet.azurewebsites.net/webhook/',
+        #'https://pfsintranet.azurewebsites.net/webhook',
         json=
         [
             {
@@ -30,7 +30,7 @@ def test_post_req_azureEG_validation_event():
 def test_post_req_non_validation_event():
     response = app.server.test_client().post(
         'http://127.0.0.1:8050/webhook',
-        #'https://pfsintranet.azurewebsites.net/webhook/',
+        #'https://pfsintranet.azurewebsites.net/webhook',
         json=
         [        
             {
@@ -48,6 +48,6 @@ def test_post_req_non_validation_event():
             }
         ]
     )
-    print(f"hi - {response.json}")
+    print(f"hi - {response.headers}")
     assert response.status_code == 200
     assert response.json['json']['data']['message'] == "this is a test"
