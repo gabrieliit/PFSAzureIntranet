@@ -176,3 +176,5 @@ PFSIntranetAzFnApp/EHDashUITestEventold/function.json
 PFSIntranetAzFnApp/MyFirstAzFn/function.json
 Secrets/EventGridClientAuthenticationServicePrinciple.txt
 dash_test.py
+app_data.txt
+azure_techsupport.zip

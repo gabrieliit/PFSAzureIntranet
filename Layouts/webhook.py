@@ -11,7 +11,7 @@ import logging
 
 
 #Define layout (defined within a function in case it needs to be paramterised later to accept layout elements as params)
-layout = homepage.layout
+page_layout = homepage.page_layout
 
 
 #Define the callbacks

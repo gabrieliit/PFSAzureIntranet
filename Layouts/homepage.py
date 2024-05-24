@@ -10,26 +10,31 @@ import json
 #import required project modules
 #from Layouts import app_data as ad
 
-event_count=0
-layout=[            
-    dcc.Location(id='home_url', refresh=False),
-    html.H1('Dash App'),
-    dcc.Input(id='home_input_data', type='text', placeholder='Enter data'),
-    html.Button('SubmitREST', id='home_submit_button_REST', n_clicks=0),
-    html.Div(id='home_output_message'),
-    html.Div(
-    [
-        
-        html.Label(event_count, id='home_event_count')
-    ]
-    ),
-    html.Button('SubmitEvent', id='home_submit_button_Event', n_clicks=0),
-    html.Label(id="home_event_pub_status"),
-    html.Button('Get Last Post Request',id='home_btn_get_last_post_req'),
-    html.Label(id="home_lbl_last_post_request"),
-    html.Div(id="home_layout_extension",children=[])
-]
 
+def draw_homepage(homepage_ext=[]):
+    layout=[            
+        dcc.Location(id='home_url', refresh=False),
+        html.H1('Dash App'),
+        dcc.Input(id='home_input_data', type='text', placeholder='Enter data'),
+        html.Button('SubmitREST', id='home_submit_button_REST', n_clicks=0),
+        html.Div(id='home_output_message'),
+        html.Div(
+        [
+            
+            html.Label(event_count, id='home_event_count')
+        ]
+        ),
+        html.Button('SubmitEvent', id='home_submit_button_Event', n_clicks=0),
+        html.Label(id="home_event_pub_status"),
+        html.Button('Get Last Post Request',id='home_btn_get_last_post_req'),
+        html.Label(id="home_lbl_last_post_request"),
+        html.Div(id="home_layout_extension",children=homepage_ext),
+        dcc.Link(id="home_link_logout",children="logout",href="/logout",)
+    ]
+    return layout
+
+event_count=0
+page_layout=draw_homepage()
 #credentials
 subscription_id = 'your_subscription_id'
 resource_group_name = 'your_resource_group_name'
@@ -40,7 +45,8 @@ def register_callbacks(app):
     @app.callback(
         Output('home_output_message', 'children'),
         [Input('home_submit_button_REST', 'n_clicks')],
-        [dash.dependencies.State('home_input_data', 'value')]
+        [dash.dependencies.State('home_input_data', 'value')],
+        prevent_initial_call=True
     )
     def make_upper_case(n_clicks, user_input):
         if n_clicks > 0:
@@ -76,7 +82,8 @@ def register_callbacks(app):
     @app.callback(
         [Output('home_event_count', 'children'),Output('home_event_pub_status','children')],
         [Input('home_submit_button_Event', 'n_clicks')],
-        [dash.dependencies.State('home_event_count', 'children')]
+        [dash.dependencies.State('home_event_count', 'children')],
+        prevent_initial_call=True
     )
     def send_event_to_grid(nclicks,event_count):
         pub_status=""

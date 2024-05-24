@@ -1,14 +1,16 @@
 from app import dash_obj as app
+from datetime import datetime
 
 # Test the POST request handler
 def test_post_req_azureEG_validation_event():
+    now=datetime.now().strftime("%H:%M:%S")
     response = app.server.test_client().post(
-        'http://127.0.0.1:8050/webhook',
-        #'https://pfsintranet.azurewebsites.net/webhook',
+        #'http://127.0.0.1:8050/webhook',
+        'https://pfsintranet.azurewebsites.net/webhook',
         json=
         [
             {
-                "id": "2d1781af-3a4c-4d7c-bd0c-e34b19da4e66",
+                "id": f"2d1781af-3a4c-4d7c-bd0c-e34b19da4e66-{now}",
                 "topic": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 "subject": "",
                 "data": 
@@ -28,13 +30,14 @@ def test_post_req_azureEG_validation_event():
     assert response.json['validationResponse'] == "512d38b6-c7b8-40c8-89fe-f46f9e9622b6"
 
 def test_post_req_non_validation_event():
+    now=datetime.now().strftime("%H:%M:%S")
     response = app.server.test_client().post(
-        'http://127.0.0.1:8050/webhook',
-        #'https://pfsintranet.azurewebsites.net/webhook',
+        #'http://127.0.0.1:8050/webhook',
+        'https://pfsintranet.azurewebsites.net/webhook',
         json=
         [        
             {
-                "id": "2d1781af-3a4c-4d7c-bd0c-e34b19da4e66",
+                "id": f"2d1781af-3a4c-4d7c-bd0c-e34b19da4e66-{now}",
                 "topic": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 "subject": "TestEvent-NonValidation",
                 "data": 
