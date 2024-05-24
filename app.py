@@ -1,15 +1,18 @@
 import dash
-from Layouts import homepage
-from index import register_callbacks
 import flask
 import logging
 import json
+import os
+#import local modules
+from Layouts import user_auth_flow
+from index import register_callbacks
 
 dash_obj = dash.Dash(__name__)
 app = dash_obj.server #default azure guincorn startup script target a variable called app to load webapp
-# Set the layout
-dash_obj.layout = homepage.layout
+app.secret_key = os.urandom(24)
 register_callbacks(dash_obj)
+# Set the layout
+dash_obj.layout = user_auth_flow.page_layout
 
 @app.route('/webhook',methods=['POST'])
 def handle_post():
