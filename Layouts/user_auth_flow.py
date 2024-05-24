@@ -5,17 +5,7 @@ from dash.dependencies import Input, Output
 import msal
 from flask import redirect, request, session
 from Layouts import homepage
-"""
-setx MSFT_AUTH_CLIENT_ID "fed278c4-f614-4379-b8b8-68c592f3e769"
-setx MSFT_AUTH_CLIENT_SECRET "Oth8Q~zeYloemXGrm6PSAQd2KEt129Qjlz2b-bIf"
-setx MSFT_AUTH_REDIRECT_URI "http://localhost:8050/.auth/login/aad/callback"
-setx MSFT_AUTH_TENANT_ID "f60dfc78-fca1-4c4c-9112-b231e45712f9"
 
-echo $MSFT_AUTH_CLIENT_ID
-echo $MSFT_AUTH_CLIENT_SECRET
-echo $MSFT_AUTH_REDIRECT_URI
-echo $MSFT_AUTH_TENANT_ID
-"""
 # Load environment variables
 CLIENT_ID = os.getenv('MSFT_AUTH_CLIENT_ID')
 CLIENT_SECRET = os.getenv('MSFT_AUTH_CLIENT_SECRET')
