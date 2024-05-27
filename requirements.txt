@@ -12,4 +12,8 @@ azure-identity
 azure-core
 dash[testing]
 pytest
+matplotlib
+seaborn
+reportlab
+xlrd
 
