@@ -5,7 +5,7 @@ from datetime import datetime
 def test_post_req_azureEG_validation_event():
     now=datetime.now().strftime("%H:%M:%S")
     response = app.server.test_client().post(
-        #'http://127.0.0.1:8050/webhook',
+        'http://127.0.0.1:8050/webhook',
         'https://pfsintranet.azurewebsites.net/webhook',
         json=
         [
