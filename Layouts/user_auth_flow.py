@@ -5,14 +5,16 @@ from dash.dependencies import Input, Output
 import msal
 from flask import redirect, request, session
 from Layouts import homepage
+import logging
 
 # Load environment variables
-CLIENT_ID = os.getenv('MSFT_AUTH_CLIENT_ID')
-CLIENT_SECRET = os.getenv('MSFT_AUTH_CLIENT_SECRET')
-TENANT_ID=os.getenv('MSFT_AUTH_TENANT_ID')
+CLIENT_ID = os.environ['MSFT_AUTH_CLIENT_ID']
+CLIENT_SECRET = os.environ['MSFT_AUTH_CLIENT_SECRET']
+TENANT_ID=os.environ['MSFT_AUTH_TENANT_ID']
 AUTHORITY = F'https://login.microsoftonline.com/{TENANT_ID}'
-REDIRECT_URI = os.getenv('MSFT_AUTH_REDIRECT_URI')
+REDIRECT_URI = os.environ['MSFT_AUTH_REDIRECT_URI']
 SCOPE = ["User.Read"]
+logging.info(CLIENT_ID)
 
 page_layout = homepage.draw_homepage(homepage_ext=[dcc.Link("login",href="/login")])
 
