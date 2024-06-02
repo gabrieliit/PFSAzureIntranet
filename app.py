@@ -3,16 +3,25 @@ import flask
 import logging
 import json
 import os
+from dash import html
+import dash_core_components as dcc
+import dash_bootstrap_components as dbc
 #import local modules
-from Layouts import user_auth_flow
-from index import register_callbacks
+import index
+from Layouts import homepage,scratch
+from index import register_callbacks,draw_page_outline
 
-dash_obj = dash.Dash(__name__)
+dash_obj = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app = dash_obj.server #default azure guincorn startup script target a variable called app to load webapp
 app.secret_key = os.urandom(24)
 register_callbacks(dash_obj)
-# Set the layout
-dash_obj.layout = user_auth_flow.page_layout
+# Set the layout - the layout is strucutred as follwos
+# 1. a dcc.Location element for a URL Bar
+# 2. a skeleton structure with a top banner, and side menu bar
+# 3. page content which sits within the skeleton, and is defined in draw_page_content() function of each page
+url_bar=dcc.Location(id='home_url',refresh=False)
+dash_obj.layout = html.Div([url_bar,index.draw_page_outline()])
+dash_obj.validation_layout=[url_bar,draw_page_outline(),homepage.draw_page_content(),scratch.draw_page_content()]
 
 @app.route('/webhook',methods=['POST'])
 def handle_post():
@@ -41,8 +50,6 @@ def handle_post():
 
 if __name__ == '__main__':
     dash_obj.run_server(debug=True)
-
-
 
 
 """from flask import Flask
