@@ -16,4 +16,5 @@ matplotlib
 seaborn
 reportlab
 xlrd
+dash-bootstrap-components
 

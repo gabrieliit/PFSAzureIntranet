@@ -4,7 +4,7 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import msal
 from flask import redirect, request, session
-from Layouts import homepage
+import index
 import logging
 
 # Load environment variables
@@ -15,8 +15,6 @@ AUTHORITY = F'https://login.microsoftonline.com/{TENANT_ID}'
 REDIRECT_URI = os.environ['MSFT_AUTH_REDIRECT_URI']
 SCOPE = ["User.Read"]
 logging.info(CLIENT_ID)
-
-page_layout = homepage.draw_homepage(homepage_ext=[dcc.Link("login",href="/login")])
 
 #ALLOWED_USERS = os.getenv('ALLOWED_USERS', '').split(';')
 def register_callbacks(app):
