@@ -59,14 +59,28 @@ def register_callbacks(app):
             username = un.get('preferred_username', 'User')
             session["user"] = un
             return redirect(f'/?un={username}')
-            """
-            #----filter based on allowed user email IDs----
-            #user_email = session["user"].get("preferred_username") 
-            if user_email in ALLOWED_USERS:
-                return redirect('/')
-            else:
-                return "You are not authorized to access this application."
-            """
+        return "Could not acquire token: " + result.get("error_description", "")
+
+    @app.server.route('/.auth/login/aad/done')#copy of the redirect routine as default azure redirect happens to this login ID
+    def authorized_2():
+        if request.args.get('state') != session.get("state"):
+            return redirect('/login')
+
+        if "error" in request.args or "code" not in request.args:
+            return "Login failed: " + request.args.get("error", "")
+
+        code = request.args['code']
+        result = msal_app.acquire_token_by_authorization_code(
+            code,
+            scopes=SCOPE,
+            redirect_uri=REDIRECT_URI,
+        )
+
+        if "access_token" in result:
+            un=result.get("id_token_claims")
+            username = un.get('preferred_username', 'User')
+            session["user"] = un
+            return redirect(f'/?un={username}')
         return "Could not acquire token: " + result.get("error_description", "")
 
     @app.server.route('/logout')
