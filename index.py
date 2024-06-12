@@ -76,7 +76,17 @@ def register_callbacks(app):
                     home_ext=[]
                 pg_content=homepage.draw_page_content(home_ext)
             elif pathname == '/login':
-                pg_content= html.Div([dcc.Location(id="redirect_to_login",href="/login")])
+                pg_elements= [dcc.Location(id="redirect_to_login",href="/login")]
+                if query:
+                    # Extract just the query string part after the '?'
+                    query_string = query.split('?')[1]
+                    parsed_params = parse_url_params(query_string)
+                    try:#handle error messages returned from microsoft oauth post request
+                        error_msg=parsed_params["error"]
+                        pg_elements=pg_elements.append(html.Label(error_msg))
+                    except:
+                        pass
+                pg_content= html.Div(pg_elements)                    
             elif pathname == '/logout':
                 pg_content= html.Div([dcc.Location(id="redirect_to_logout",href="/logout")])
             elif pathname=='/scratch':

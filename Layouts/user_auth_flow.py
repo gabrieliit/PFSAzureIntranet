@@ -7,6 +7,15 @@ from flask import redirect, request, session
 import index
 import logging
 
+"""
+THe user auth flow works as follows:
+1. user presses the login button and gets navigated to /login route
+2. The /login route handler queries msal library to fetch microsoft auth url and creates a post request to that url inclduing the session state and redirect URI as a param
+3. If the user is configured in the global directory for the app registration in MS EntraID (ie Active Dir), The Mircosft oauth provider authenticates the user (either by send ing a code to their email, or autheticator app)
+4. If authentication is successful, the oauth provider sends a post request to the redirect URI, after validating the URI provided in Step 2 is the same as that configured in the Azure portal for security purposes
+5. the redirect URI route handler reads the access token from the post request, extracts the user name and redirects to the home page with logged in status.
+6. If oauth provider post has an error, redirect URI route handler, sends user to /login route with error message received in the post request from oauth provider
+"""
 # Load environment variables
 CLIENT_ID = os.environ['MSFT_AUTH_CLIENT_ID']
 CLIENT_SECRET = os.environ['MSFT_AUTH_CLIENT_SECRET']
@@ -45,7 +54,8 @@ def register_callbacks(app):
             return redirect('/login')
 
         if "error" in request.args or "code" not in request.args:
-            return "Login failed: " + request.args.get("error", "")
+            error_msg="Login failed: " + request.args.get("error", "")
+            return redirect(f'/login/?error={error_msg}')
 
         code = request.args['code']
         result = msal_app.acquire_token_by_authorization_code(
@@ -59,7 +69,7 @@ def register_callbacks(app):
             username = un.get('preferred_username', 'User')
             session["user"] = un
             return redirect(f'/?un={username}')
-        return "Could not acquire token: " + result.get("error_description", "")
+        return "Could not acquire token: " + result.get("error_description", ""), 400
 
     @app.server.route('/.auth/login/aad/done')#copy of the redirect routine as default azure redirect happens to this login ID
     def authorized_2():
