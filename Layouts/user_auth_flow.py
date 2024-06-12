@@ -69,7 +69,8 @@ def register_callbacks(app):
             username = un.get('preferred_username', 'User')
             session["user"] = un
             return redirect(f'/?un={username}')
-        return "Could not acquire token: " + result.get("error_description", ""), 400
+        error_msg= "Could not acquire token: " + result.get("error_description", "")
+        return redirect(f'/login/?error={error_msg}')
 
     @app.server.route('/.auth/login/aad/done')#copy of the redirect routine as default azure redirect happens to this login ID
     def authorized_2():
