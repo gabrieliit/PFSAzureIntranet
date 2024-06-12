@@ -55,7 +55,7 @@ def register_callbacks(app):
 
         if "error" in request.args or "code" not in request.args:
             error_msg="Login failed: " + request.args.get("error", "")
-            return redirect(f'/login/?error={error_msg}')
+            return redirect(f'/login?error={error_msg}')
 
         code = request.args['code']
         result = msal_app.acquire_token_by_authorization_code(
@@ -70,7 +70,7 @@ def register_callbacks(app):
             session["user"] = un
             return redirect(f'/?un={username}')
         error_msg= "Could not acquire token: " + result.get("error_description", "")
-        return redirect(f'/login/?error={error_msg}')
+        return redirect(f'/login?error={error_msg}')
 
     @app.server.route('/.auth/login/aad/done')#copy of the redirect routine as default azure redirect happens to this login ID
     def authorized_2():
