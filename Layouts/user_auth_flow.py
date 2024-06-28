@@ -20,7 +20,7 @@ THe user auth flow works as follows:
 CLIENT_ID = os.environ['MSFT_AUTH_CLIENT_ID']
 CLIENT_SECRET = os.environ['MSFT_AUTH_CLIENT_SECRET']
 TENANT_ID=os.environ['MSFT_AUTH_TENANT_ID']
-AUTHORITY = F'https://login.microsoftonline.com/{TENANT_ID}'
+AUTHORITY = f'https://login.microsoftonline.com/{TENANT_ID}'
 REDIRECT_URI = os.environ['MSFT_AUTH_REDIRECT_URI']
 SCOPE = ["User.Read"]
 logging.info(CLIENT_ID)
@@ -44,7 +44,7 @@ def register_callbacks(app):
         auth_url = msal_app.get_authorization_request_url(
             SCOPE,
             state=session["state"],
-            redirect_uri=REDIRECT_URI
+            redirect_uri=f"{REDIRECT_URI}/.auth/login/aad/callback"
         )
         return redirect(auth_url)
 
@@ -61,7 +61,7 @@ def register_callbacks(app):
         result = msal_app.acquire_token_by_authorization_code(
             code,
             scopes=SCOPE,
-            redirect_uri=REDIRECT_URI,
+            redirect_uri=f"{REDIRECT_URI}/.auth/login/aad/callback",
         )
 
         if "access_token" in result:
@@ -71,28 +71,6 @@ def register_callbacks(app):
             return redirect(f'/?un={username}')
         error_msg= "Could not acquire token: " + result.get("error_description", "")
         return redirect(f'/login?error={error_msg}')
-
-    @app.server.route('/.auth/login/aad/done')#copy of the redirect routine as default azure redirect happens to this login ID
-    def authorized_2():
-        if request.args.get('state') != session.get("state"):
-            return redirect('/login')
-
-        if "error" in request.args or "code" not in request.args:
-            return "Login failed: " + request.args.get("error", "")
-
-        code = request.args['code']
-        result = msal_app.acquire_token_by_authorization_code(
-            code,
-            scopes=SCOPE,
-            redirect_uri=REDIRECT_URI,
-        )
-
-        if "access_token" in result:
-            un=result.get("id_token_claims")
-            username = un.get('preferred_username', 'User')
-            session["user"] = un
-            return redirect(f'/?un={username}')
-        return "Could not acquire token: " + result.get("error_description", "")
 
     @app.server.route('/logout')
     def logout():
