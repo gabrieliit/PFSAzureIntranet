@@ -44,7 +44,7 @@ def register_callbacks(app):
         auth_url = msal_app.get_authorization_request_url(
             SCOPE,
             state=session["state"],
-            redirect_uri=f"{REDIRECT_URI}/.auth/login/aad/callback"
+            redirect_uri=REDIRECT_URI
         )
         return redirect(auth_url)
 
@@ -61,7 +61,7 @@ def register_callbacks(app):
         result = msal_app.acquire_token_by_authorization_code(
             code,
             scopes=SCOPE,
-            redirect_uri=f"{REDIRECT_URI}/.auth/login/aad/callback",
+            redirect_uri=REDIRECT_URI,
         )
 
         if "access_token" in result:
