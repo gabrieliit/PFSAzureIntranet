@@ -58,12 +58,13 @@ def register_callbacks(app):
             return redirect(f'/login?error={error_msg}')
 
         code = request.args['code']
+        print(code)
         result = msal_app.acquire_token_by_authorization_code(
             code,
             scopes=SCOPE,
             redirect_uri=REDIRECT_URI,
         )
-
+        print(result)
         if "access_token" in result:
             un=result.get("id_token_claims")
             username = un.get('preferred_username', 'User')
