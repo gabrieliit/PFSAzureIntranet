@@ -48,31 +48,38 @@ def register_callbacks(app):
             state=session["state"],
             redirect_uri=REDIRECT_URI
         )
+        logging.info(f"Received redirect url : {auth_url}")
         return redirect(auth_url)
 
     @app.server.route('/.auth/login/aad/callback')
     def authorized():
         if request.args.get('state') != session.get("state"):
+            logging.error("State variable did not match in authorisation url response")
             return redirect('/login')
 
         if "error" in request.args or "code" not in request.args:
             error_msg="Login failed: " + request.args.get("error", "")
+            logging.error(f"Error in login request response from oauth provider : {error_msg}")
             return redirect(f'/login?error={error_msg}')
 
         code = request.args['code']
-        print(code)
+        logging.info(f"Received Auth code from auth URL : {code}")
+        #print(code)
         result = msal_app.acquire_token_by_authorization_code(
             code,
             scopes=SCOPE,
             redirect_uri=REDIRECT_URI,
         )
-        print(result)
+
         if "access_token" in result:
             un=result.get("id_token_claims")
             username = un.get('preferred_username', 'User')
             session["user"] = un
+            logging.info(f"Received access token in response.  USername extracted {username}")
             return redirect(f'/?un={username}')
+
         error_msg= "Could not acquire token: " + result.get("error_description", "")
+        logging.error(f"Failed to acquire token using auth code due to error : {error_msg}")
         return redirect(f'/login?error={error_msg}')
 
     @app.server.route('/logout')
