@@ -16,6 +16,7 @@ THe user auth flow works as follows:
 5. the redirect URI route handler reads the access token from the post request, extracts the user name and redirects to the home page with logged in status.
 6. If oauth provider post has an error, redirect URI route handler, sends user to /login route with error message received in the post request from oauth provider
 """
+
 # Load environment variables
 CLIENT_ID = os.environ['MSFT_AUTH_CLIENT_ID']
 CLIENT_SECRET = os.environ['MSFT_AUTH_CLIENT_SECRET']
@@ -23,8 +24,9 @@ TENANT_ID=os.environ['MSFT_AUTH_TENANT_ID']
 AUTHORITY = f'https://login.microsoftonline.com/{TENANT_ID}'
 REDIRECT_URI = os.environ['MSFT_AUTH_REDIRECT_URI']
 SCOPE = ["User.Read"]
-logging.info(CLIENT_ID)
 
+logging.basicConfig(level=logging.DEBUG,filename="user_auth_flow_log.txt",filemode="w",format='%(asctime)s %(levelname)-8s %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+logging.info(CLIENT_ID)
 #ALLOWED_USERS = os.getenv('ALLOWED_USERS', '').split(';')
 def register_callbacks(app):
     if not CLIENT_ID or not CLIENT_SECRET or not REDIRECT_URI:
