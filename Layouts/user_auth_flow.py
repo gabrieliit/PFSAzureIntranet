@@ -48,7 +48,8 @@ def register_callbacks(app):
             state=session["state"],
             redirect_uri=REDIRECT_URI
         )
-        logging.info(f"Received redirect url : {auth_url}")
+        logging.info(f"Redirect URI stored in env : {REDIRECT_URI}")
+        logging.info(f"Received auth url from msal app : {auth_url}")
         return redirect(auth_url)
 
     @app.server.route('/.auth/login/aad/callback')
