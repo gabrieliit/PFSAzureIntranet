@@ -54,6 +54,7 @@ def register_callbacks(app):
 
     @app.server.route('/.auth/login/aad/callback')
     def authorized():
+        logging.info("Auth provider redirected to redirect URI")
         if request.args.get('state') != session.get("state"):
             logging.error("State variable did not match in authorisation url response")
             return redirect('/login')
