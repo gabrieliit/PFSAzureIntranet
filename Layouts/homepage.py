@@ -3,12 +3,16 @@ import dash_html_components as html
 import dash_core_components as dcc
 import dash
 from dash import Input, Output,State,callback_context
+import dash_table
 from datetime import datetime,timedelta
 import os
 import json
 import requests
+import pandas as pd
+from bson import json_util
 #import required project modules
 from Layouts import user_auth_flow as uf,styles
+from DataServices import mongo_store as mdb, data_utils as du
 #from Layouts import app_data as ad
 event_count=0
 #Connection details
@@ -24,6 +28,7 @@ GM_PER_TROY_OUNCE=31.103
 #draw the homepage
 def draw_page_content(ext=[]):
     #define hompage content
+    #get gold price
     try:
         with open("price.json", "r") as file:
             last_price_point=json.load(file)
@@ -35,21 +40,54 @@ def draw_page_content(ext=[]):
         price="NA"
         source="NA"
         date="NA"
-    homepage_content=html.Div([
-        html.Div(
+    #pull sample data from db
+    db = mdb.mongo_client["sample_mflix"]
+    collection = db["comments"]
+    # Fetch data from MongoDB and convert to DataFrame
+    query_results = collection.find({"name":"Mercedes Tyler"}) 
+    df = du.mdb_query_postproc(query_results)
+    #df=df.iloc[:,1:]
+
+    homepage_content=html.Div(
         [
-            html.Label("Last fetched gold price :", style={"margin-right":"10px"}),
-            dcc.Input(value=f"{price}",style={"margin-right":"10px"},id="home-tb-price-XAU-display",readOnly=True),
-            html.Label(f"Sourced from : {source} on {date}",id="home-lbl-price-XAU-source")
-        ]),         
-        html.Button("Fetch Latest Gold Price", id="home-btn-fetch-xau-latest"),
-        html.Div(id="home-div-price-XAU-display"),
-        dcc.ConfirmDialog(
-            id="home-confirm-dialog-xau-price-persist",
-            message="Do you want to save the data to a local file?"
-        ),
-        dcc.Store(id="home-store-fetched-xau-price-latest")
-    ], style=styles.CONTENT_STYLE)   
+            html.Div(
+            [
+                html.Label("Last fetched gold price :", style={"margin-right":"10px"}),
+                dcc.Input(value=f"{price}",style={"margin-right":"10px"},id="home-tb-price-XAU-display",readOnly=True),
+                html.Label(f"Sourced from : {source} on {date}",id="home-lbl-price-XAU-source"),
+                html.Button("Fetch Latest Gold Price", id="home-btn-fetch-xau-latest"),
+                html.Div(id="home-div-price-XAU-display"),
+                dcc.ConfirmDialog(
+                    id="home-confirm-dialog-xau-price-persist",
+                    message="Do you want to save the data to a local file?"
+                ),
+                dcc.Store(id="home-store-fetched-xau-price-latest"),
+            ],
+            style={"margin-bottom":"75px"}), 
+            # Display the Sample DataTable from Mongo Db
+            html.Div
+            (
+                [
+                    html.H2("Sample Mflix data from Mongo Db"),
+                    dash_table.DataTable
+                    (
+                        id='home-tbl-sample-mflix-comments',
+                        columns=[{"name": col, "id": col} for col in df.columns],
+                        data=df.to_dict('records'),
+                        # Other DataTable properties (e.g., pagination, sorting) can be customized here
+                        style_table=
+                        {
+                            'overflowY': 'scroll',  # Enable vertical scrolling
+                            'overflowX': 'scroll',
+                            'maxHeight': '300px',  # Set the maximum height
+                            'width': '100%',
+                        }
+                    )
+                ],
+            )
+        ],
+        style=styles.CONTENT_STYLE
+    )   
     return homepage_content
 
 #Define an register callbacks

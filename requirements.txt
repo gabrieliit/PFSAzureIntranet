@@ -17,4 +17,5 @@ seaborn
 reportlab
 xlrd
 dash-bootstrap-components
+pymongo
 
