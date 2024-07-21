@@ -7,9 +7,9 @@ from dash import html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 #import local modules
-import index
+import Layouts.index as index
 from Layouts import homepage,scratch
-from index import register_callbacks,draw_page_outline
+from Layouts.index import register_callbacks,draw_page_outline
 
 dash_obj = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 app = dash_obj.server #default azure guincorn startup script target a variable called app to load webapp
