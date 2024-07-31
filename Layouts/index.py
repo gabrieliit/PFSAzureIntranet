@@ -7,7 +7,8 @@ from urllib.parse import parse_qs
 from flask import session,url_for
 import os
 # import required project modules
-from Layouts import homepage, scratch, shared_components as sc,user_auth_flow,styles
+from Layouts import homepage, scratch, shared_components as sc,user_auth_flow,styles,layouts_config
+from Layouts.Forms import forms_config
 
 
 def parse_url_params(url):
@@ -35,11 +36,10 @@ def draw_page_outline(page_content=[],login=False,un=""):
 
 # Register callbacks
 def register_callbacks(app):
-    #Register callbacks for each page
-    homepage.register_callbacks(app)
-    scratch.register_callbacks(app)
-    #webhook.register_callbacks(app)
-    user_auth_flow.register_callbacks(app)
+    #Register callbacks for each layout
+    layouts_config.register_layout_callbacks(app)
+    #register forms callbacks
+    forms_config.register_forms_callbacks(app)
     # register callback to map routes to layouts
     @app.callback([Output('pg_content', 'children'),Output('outline_top_banner','children')],
                 [Input('home_url', 'pathname')],
