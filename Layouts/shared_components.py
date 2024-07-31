@@ -32,20 +32,31 @@ side_bar = html.Div(
         html.Hr(),
         html.P("Select links to navigate", className="lead"),
         dbc.Nav(
-        [
-            dbc.NavLink("Home", href="/", active="exact"),
-            dbc.NavLink("MI", href="/mi", active="exact"),
-            dbc.NavLink("Loans", href="/loans", active="exact"),
-            dbc.NavLink("Receipts", href="/receipts", active="exact"),
-            dbc.NavLink("Accounts", href="/accounts", active="exact"),
-            dbc.NavLink("Customers", href="/customers", active="exact"),
-            dbc.NavLink("Admin", href="/admin", active="exact"),
-            dbc.NavLink("Scratch", href="/scratch", active="exact"),
-        ],
-        vertical=True,
-        pills=True,
+            [
+                dbc.NavLink("Home",href="/", active="exact"),
+                dbc.DropdownMenu
+                (
+                    [
+                        dbc.DropdownMenuItem("Loans", href="/loans",active=False),
+                        dbc.DropdownMenuItem("Receipts", href="/receipts", active=False),
+                        dbc.DropdownMenuItem("Accounts", href="/accounts", active=False),
+                        dbc.DropdownMenuItem("Customers", href="/customers", active=False),
+                    ],
+                    label="MI", 
+                    nav=True,
+                ),
+                dbc.NavLink("Admin", href="/admin", active="exact"),
+                dbc.NavLink("Scratch", href="/scratch", active="exact"),
+            ],
+            vertical=True,
         ),
     ],
     style=styles.SIDEBAR_STYLE,
     id="outline_side_bar"
 )
+
+def toggle_modal(n, is_open):
+    #if button is clicked open the corresponding modal
+    if n:
+        return not is_open
+    return is_open

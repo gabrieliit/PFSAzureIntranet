@@ -8,7 +8,8 @@ import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 #import local modules
 import Layouts.index as index
-from Layouts import homepage,scratch
+from Layouts import layouts_config
+from Layouts.Forms import forms_config
 from Layouts.index import register_callbacks,draw_page_outline
 
 dash_obj = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -21,7 +22,7 @@ register_callbacks(dash_obj)
 # 3. page content which sits within the skeleton, and is defined in draw_page_content() function of each page
 url_bar=dcc.Location(id='home_url',refresh=False)
 dash_obj.layout = html.Div([url_bar,index.draw_page_outline()])
-dash_obj.validation_layout=[url_bar,draw_page_outline(),homepage.draw_page_content(),scratch.draw_page_content()]
+dash_obj.validation_layout=[url_bar] + layouts_config.validate_layouts() + forms_config.validate_forms()
 
 @app.route('/webhook',methods=['POST'])
 def handle_post():
