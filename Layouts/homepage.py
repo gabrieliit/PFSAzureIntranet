@@ -74,7 +74,7 @@ def draw_page_content(ext=[]):
                     dbc.Row(
                         [
                             dbc.Col(dbc.Label("Customer Name"),width=2,style={"font-size":"8"}),
-                            dbc.Col(dbc.Input(placeholder="Enter phone No",id="home-search-acc-input-cust-name"),width=3),
+                            dbc.Col(dbc.Input(placeholder="Enter customer name",id="home-search-acc-input-cust-name"),width=3),
                         ]
                     ),
                     dbc.Row(
@@ -164,7 +164,7 @@ def register_callbacks(app):
         #set mongo db conn details
         db = mdb.mongo_client["PFS_MI"]
         collection = db["Accounts"]
-        attribs=["GL_No","Customer_Phone","Customer_Name"]
+        attribs=["GL_No","Customer_Name","Customer_Phone"]
         values=[gl_no,cust_name,cust_phone]
         filters={}
         for attrib,value in zip(attribs,values):
