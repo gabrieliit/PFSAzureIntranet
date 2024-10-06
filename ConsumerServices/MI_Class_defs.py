@@ -1,6 +1,6 @@
 import os
 from SourceObj_Classes import DataSource
-from SourceMetadata import Sources
+from DataServices.Extract.source_metadata import Sources
 from MI_metadata import MI_facts_metadata
 import numpy as np
 import pandas as pd

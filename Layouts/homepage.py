@@ -12,8 +12,8 @@ import requests
 import pandas as pd
 from bson import json_util
 #import required project modules
-from Layouts import user_auth_flow as uf,styles
-from DataServices import mongo_store as mdb, data_utils as du
+from Layouts import user_auth_flow as uf,styles,shared_components as sc
+from CommonDataServices import mongo_store as mdb, data_utils as du
 from Layouts.Forms import accounts_forms
 event_count=0
 #Connection details
@@ -173,20 +173,8 @@ def register_callbacks(app):
         if n_clicks_get:
             # Fetch data from MongoDB and convert to DataFrame
             query_results = collection.find(filters) 
-            df = du.mdb_query_postproc(query_results)
-            children=dash_table.DataTable(
-                id='home-tbl-sample-mflix-comments',
-                columns=[{"name": col, "id": col} for col in df.columns],
-                data=df.to_dict('records'),
-                # Other DataTable properties (e.g., pagination, sorting) can be customized here
-                style_table=
-                {
-                    'overflowY': 'scroll',  # Enable vertical scrolling
-                    'overflowX': 'scroll',
-                    'maxHeight': '300px',  # Set the maximum height
-                    'width': '100%',
-                }
-            )
+            df = du.mdb_query_postproc(query_results,dtype='str')
+            children=sc.df_to_dash_table(df,'home-tbl-sample-mflix-comments')
         else:
             children= dash.no_update
         return children

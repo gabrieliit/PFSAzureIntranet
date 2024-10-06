@@ -7,7 +7,7 @@ from Doc_Architect import Document
 from dateutil.relativedelta import relativedelta
 import os
 from MI_Class_defs import DataSource
-from SourceMetadata import Sources
+from DataServices.Extract.source_metadata import Sources
 from RunConfig import mi_run_params
 
 def generate_loan_status_report(dataset,rep_date,source_name):
