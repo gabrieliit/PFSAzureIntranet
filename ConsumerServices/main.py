@@ -10,7 +10,7 @@ from CutomerReport import generate_customer_report
 from Doc_Architect import Document
 from RunConfig import mi_run_params
 from MI_Class_defs import MetricFactory
-from SourceMetadata import Sources
+from DataServices.Extract.source_metadata import Sources
 from MI_metadata import MI_facts_metadata
 from Trends import generate_trends_report
 def get_filename(source, dataset):

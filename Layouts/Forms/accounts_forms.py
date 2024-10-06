@@ -4,7 +4,7 @@ import dash_html_components as html
 import dash
 import dash_core_components as dcc
 #import from other modules
-from DataServices import mongo_store as mdb, data_utils as du
+from CommonDataServices import mongo_store as mdb, data_utils as du
 from Layouts.Forms import forms_config
 
 #set mongo db conn details

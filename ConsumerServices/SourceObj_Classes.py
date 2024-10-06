@@ -1,4 +1,4 @@
-from SourceMetadata import Sources
+from DataServices.Extract.source_metadata import Sources
 import os
 import pandas as pd
 
