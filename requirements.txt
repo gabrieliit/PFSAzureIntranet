@@ -18,4 +18,5 @@ reportlab
 xlrd
 dash-bootstrap-components
 pymongo
+pydrive
 

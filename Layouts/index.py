@@ -7,7 +7,8 @@ from urllib.parse import parse_qs
 from flask import session,url_for
 import os
 # import required project modules
-from Layouts import homepage, scratch, shared_components as sc,user_auth_flow,styles,layouts_config
+from Layouts import homepage, scratch, shared_components as sc
+from Layouts import user_auth_flow,styles,layouts_config,dataloader,load_jobs_inv
 from Layouts.Forms import forms_config
 
 
@@ -91,6 +92,10 @@ def register_callbacks(app):
                 pg_content= html.Div([dcc.Location(id="redirect_to_logout",href="/logout")])
             elif pathname=='/scratch':
                 pg_content=scratch.draw_page_content()
+            elif pathname=='/dataloader':
+                pg_content=dataloader.draw_page_content()
+            elif pathname=='/dataloadjobs':
+                pg_content=load_jobs_inv.draw_page_content()
             # Add more pages as needed
             else:
                 pg_content= [html.Label(f'404 - {pathname} this page is under development',style=styles.CONTENT_STYLE)]
