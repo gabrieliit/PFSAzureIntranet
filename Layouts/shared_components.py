@@ -1,4 +1,4 @@
-from dash import dcc, html
+from dash import dcc, html,dash_table
 import dash_bootstrap_components as dbc
 #import project modules
 from Layouts import styles
@@ -7,6 +7,29 @@ from Layouts import styles
 company_logo_url = "https://example.com/logo.png"
 company_name = "Acme Company"
 external_stylesheets=[dbc.themes.BOOTSTRAP]
+
+#utility function to convert df to a dash table
+def df_to_dash_table(df,id_str="default"):
+    df=df.astype(str)
+    return dash_table.DataTable(
+                id=id_str,
+                columns=[{"name": col, "id": col} for col in df.columns],
+                data=df.to_dict('records'),
+                # Other DataTable properties (e.g., pagination, sorting) can be customized here
+                style_table=
+                {
+                    'overflowY': 'scroll',  # Enable vertical scrolling
+                    'overflowX': 'scroll',
+                    'maxHeight': '300px',  # Set the maximum height
+                    'width': '100%',
+                    'table-layout': 'fixed'
+                },
+                style_cell={
+                    "textAlign": "left",
+                    'minWidth': '150px',
+                },
+                fixed_rows={"headers": True},  # Freeze the header row
+            )
 
 # Top banner
 def draw_top_banner(login=False,user_name=""):
@@ -41,6 +64,8 @@ side_bar = html.Div(
                         dbc.DropdownMenuItem("Receipts", href="/receipts", active=False),
                         dbc.DropdownMenuItem("Accounts", href="/accounts", active=False),
                         dbc.DropdownMenuItem("Customers", href="/customers", active=False),
+                        dbc.DropdownMenuItem("Data Loader", href="/dataloader", active=False),
+                        dbc.DropdownMenuItem("Data Load Jobs", href="/dataloadjobs", active=False),
                     ],
                     label="MI", 
                     nav=True,
