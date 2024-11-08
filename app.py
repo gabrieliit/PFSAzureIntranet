@@ -48,7 +48,9 @@ def handle_post():
         response=flask.make_response(flask.jsonify(req_dict))
         response.headers["Content-Type"]="application/json"
     return response
-if __name__ == '__main__':    dash_obj.run_server(debug=True)
+    
+if __name__ == '__main__':    
+        dash_obj.run_server(debug=True)
 
 """from flask import Flask
 app= Flask(__name__)

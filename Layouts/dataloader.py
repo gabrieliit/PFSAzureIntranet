@@ -71,7 +71,7 @@ def draw_page_content():
             dcc.ConfirmDialog(id='dataloader-cdg-upload-to-mdb'),
             dcc.Store(id='dataloader-store-file-data'),
             html.Div(id='dataloader-div-view-file'),
-            dcc.Markdown(id='dataloader-md-upload-mdb-msg'),
+            dcc.Markdown(id='dataloader-md-upload-mdb-msg',),
         ],
         style=styles.CONTENT_STYLE
         )
@@ -117,8 +117,15 @@ def register_callbacks(app):
             elif contents is not None:
                 content_type, content_string = contents.split(',')
                 decoded = base64.b64decode(content_string)
+                dtypes=ProducerSources[filetype]["ColTypes"]
                 df = pd.read_excel(io.BytesIO(decoded),skiprows=ProducerSources[filetype]["SkipRows"]-1)
-                df.columns=ProducerSources[filetype]["ColTypes"].keys()
+                df.columns=dtypes.keys()
+                for col,dtype in dtypes.items():#retain string types for dsiplay purposes  
+                    if type(dtype)==str:
+                        if dtype.startswith("date"):
+                            str_format=dtype[dtype.find("date-")+len("date-"):]#date dtype is specified as date-formatstring in ColTypes metadate
+                            # Convert the date strings to dd-mm-yyyy format
+                            df[col] = pd.to_datetime(df[col],errors="coerce").dt.strftime(str_format)    
                 #create dash table to display
                 children=sc.df_to_dash_table(df,'dataloader-tbl-view-data')
                 disabled=False
@@ -134,33 +141,44 @@ def register_callbacks(app):
         State('dataloader-dp-sel-cob-date','date'),
         Input('dataloader-btn-upload-to-mdb','n_clicks'),
         Input('dataloader-cdg-upload-to-mdb','submit_n_clicks'),
-        Input("dataloader-ip-rowlimit", "value")
+        State("dataloader-ip-rowlimit", "value"),
     )
     def transform_load_data(data,source,cob,n_clicks,submit_n_clicks,row_limit):
-        if n_clicks and not submit_n_clicks:
+        ctx = dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if trigger_id=='dataloader-btn-upload-to-mdb':
             msg="This will trigger a job to write records to database and may take several minutes to complete.\nYou can view progress of the write job in LoadJobsInventory tab under MI menu.\nClick OK to proceed or Cancel to abort"
             return dash.no_update, msg,True
-        elif submit_n_clicks:
+        elif trigger_id=='dataloader-cdg-upload-to-mdb' and submit_n_clicks:
             raw_df=pd.DataFrame(data)
             source_obj=de.DataSource_Old(source,raw_df)
             df=source_obj.df
-            global mapper#define as global so we can access it in other callbacks
-            mapper=dt.DataTransformer(source_obj,cob)
             dtypes=ProducerSources[source]["ColTypes"]
+            #add derived col dtypes
+            try:
+                der_cols=ProducerSources[source]["DerivedCols"]["TargetCols"]
+                der_types=ProducerSources[source]["DerivedCols"]["TargetDataTypes"]
+                for col,dtype in zip(der_cols,der_types):
+                    dtypes[col]=dtype
+            except: #no derived cols for data source
+                pass
             #explicity cast data types to match mongo db schema
             for col,dtype in dtypes.items():
                 if type(dtype)==str:#currently only date type objects are specified as strings in the ColTypes metadata
                     if dtype.startswith("date"):
                         str_format=dtype[dtype.find("date-")+len("date-"):]#date dtype is specified as date-formatstring in ColTypes metadate
-                        df[col]=pd.to_datetime(df[col],errors='coerce',format=str_format)
+                        df[col]=pd.to_datetime(df[col],errors='coerce',format=str_format,)
                         df[col]=df[col].fillna(pd.to_datetime('1900-01-01'))
                 else:
                     df[col]=df[col].astype(dtype)
-            max_rows=None if row_limit=='' else int(row_limit) 
-            mapper.transform_data(row_limit=max_rows)
-            job_id=mapper.load_data(batch_size=50)
-            njobs=len(job_id.keys())
-            msg=f"{njobs} collections will be updated. You can track jobs using the following IDs - \n {str(job_id)} "
-            return dbc.Alert(msg,color='warning'), dash.no_update,dash.no_update
-        else:
-            return dash.no_update,dash.no_update,dash.no_update
+            #update source obj.df
+            source_obj.df=df
+            global mapper#define as global so we can access it in other callbacks
+            mapper=dt.DataTransformer(source_obj,cob)
+            max_rows=float("inf") if row_limit==None else int(row_limit) 
+            job_id_list=mapper.transform_data(row_limit=max_rows)
+            mapper.load_data(batch_size=50)
+            njobs=len(job_id_list)
+            msg=f"{njobs} collections will be updated. You can track jobs using the following IDs - \n {str(job_id_list)} "
+            return msg, dash.no_update,dash.no_update
+        return dash.no_update,dash.no_update,dash.no_update
