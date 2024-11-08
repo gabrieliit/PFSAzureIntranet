@@ -68,7 +68,12 @@ TransformMap={
                 "Source":"Attrib",
                 "AttribName":"ST"
             },
+            "LoanStartDate":
+            {
+                "Source":"Attrib",
+                "AttribName":"GL Date"
+            }
         },
-        "UpsertFilters":["GLNo"]
+        "UpsertFilters":["GLNo","LoanStartDate"]
     },
 }
