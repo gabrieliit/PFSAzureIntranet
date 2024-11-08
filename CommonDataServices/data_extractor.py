@@ -1,40 +1,34 @@
 import pandas as pd
 from ProducerServices.Extract.source_metadata import ProducerSources
 from ConsumerServices.Extract.consumer_sources_metadata import ConsumerSources
-from CommonDataServices import data_queries as dq
+from CommonDataServices import data_queries as dq, data_utils as du
 
 class DataSource_Old(): # this should be inherited from DataSource
     def __init__(self,source,df):    
         self.source=source
+        self.pp_ops=[]
         try:
-            self.pp_ops=ProducerSources[source]["PreProcessOps"]
-        except KeyError:
-            self.pp_ops=[]
+            #add derived cols to pre-process tasks
+            op=ProducerSources[source]["DerivedCols"]
+            op["OpType"]="DerivedCols"
+            self.pp_ops.append(op)
+        except KeyError as e:
+            pass#no derived cols
         n_drop_rows=ProducerSources[source]["DropRowsEnd"]
         df.drop(df.tail(n_drop_rows).index, inplace=True)
         df.columns=ProducerSources[source]["ColTypes"].keys()
+        self.df=df
+        self.pre_process_data()
         #dd-mm-yyyy type cols are converted to date types. Convert them back to strings
         dtypes=ProducerSources[source]["ColTypes"]
         #explicity cast data types to match target schema. 
         #NOTE - this shoudl be done as  part of transform not extract processing
-        for col,dtype in dtypes.items():
-            if type(dtype)==str:#currently only date,intstr intstr type objects are specified as strings in the ColTypes metadata
-                if dtype.startswith("date"):
-                    str_format=dtype[dtype.find("date-")+len("date-"):]#date dtype is specified as date-formatstring in ColTypes metadate
-                    df[col]=pd.to_datetime(df[col], format=str_format,errors='coerce')
-                    df[col]=df[col].fillna(pd.to_datetime('1900-01-01'))#fill na with default date
-                    df[col]=df[col].dt.strftime(str_format)#convert to standard string
-                elif dtype=="intstr":#first convert to int and then cast to string to remove all decimals
-                    df[col]=df[col].astype(int).astype(str)
-            else:
-                df[col]=df[col].astype(dtype)
-        self.df=df
-        self.pre_process_data()
+        for col,dtype in dtypes.items(): df[col]=du.cast_dfcol_to_type(df[col],dtype)
 
     def pre_process_data(self):
         for op in self.pp_ops:
-            if op["OpType"]=="DeriveCols":
-                if op["OpMethod"]=="SplitCol":
+            if op["OpType"]=="DerivedCols":
+                if op["Method"]=="SplitCol":
                     src_col=op["SourceCols"][0]
                     method=op["SplitMethod"]
                     if method=="UseDelimiter":
@@ -42,6 +36,7 @@ class DataSource_Old(): # this should be inherited from DataSource
                         df=self.df[src_col].str.split(val,expand=True)
                         #Name the split columns
                         df.columns=op["TargetCols"]
+                        for col,dtype in zip(df.columns,op["TargetDataTypes"]): df[col]=du.cast_dfcol_to_type(df[col],dtype)
                         self.df=pd.concat([self.df,df], axis=1)
 
 def source_factory(source,dataset_type,**kwargs):

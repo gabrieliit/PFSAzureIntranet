@@ -37,8 +37,8 @@ ProducerSources = {
         "Description":"Loan amounts and balances for pending loans",
         "FileName": "LoanStatus",
         "SkipRows": 4,
-        "ColTypes":{"Date":"date-%d-%m-%Y","GL. No":str,"Name":str,"Amt. Given":float,"Princi. Due":str,"Interest Due":str},
-        "DerivedCols":["OverdueSince"],
+        "ColTypes":{"Date":"date-%d-%m-%Y","GL. No":str,"Name":str,"Amt. Given":float,"Interest Due":str,"Princi. Due":str},
+        #"DerivedCols":["OverdueSince"],
         "Format":"xls",
         "DropRowsEnd":2,#Drop total rows and empty rows at the end
     },
@@ -92,22 +92,19 @@ ProducerSources = {
             "Total Amt":float,
             "ST":str,
             "Int. Calculated On":float,
-            "No. of Days":int
+            "No. of Days":int,
         },
         "Format":"xls",
         "DropRowsEnd":2,#Drop total rows and empty rows at the end
-        "PreProcessOps":
-        [
-            {                
-                "OpType":"DeriveCols",
-                "OpMethod":"SplitCol",
-                "SourceCols":["GL. No. - GL Date"],
-                "TargetCols":["GL. No.","GL Date"],
-                "SplitMethod":"UseDelimiter",
-                "DelimiterVal":"-",
-                "KeepIndex":[0]
-            },
-        ]   
+        "DerivedCols":{                
+            "Method":"SplitCol",
+            "SourceCols":["GL. No. - GL Date"],
+            "TargetCols":["GL. No.","GL Date"],
+            "TargetDataTypes":[str,"date-%d/%m/%Y"],
+            "SplitMethod":"UseDelimiter",
+            "DelimiterVal":"-",
+            "KeepIndex":[0]
+        },   
     },
     "Merged_Receipt_PendingLoan":
     {
