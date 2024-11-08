@@ -56,12 +56,13 @@ TransformMap={
             },
             "Date":
             {
-                "Source":"Attrib",
-                "AltAttribMap":transform_utils.NotingDateMap,
-                "AttribName":"Notice Date",
+                "Source":"ConditionalMap",
+                "KeyAttrib":"NotingType",
+                "MapName":transform_utils.NotingDateMap,
                 #This attribute is dependent on at least one lower dependency order attribute.
                 # When not specfied dependency order is defaulted to zero, ie no dependencies. 
-                "DependencyOrder":1            },
+                "DependencyOrder":1            
+            },
             "Amount":
             {
                 "Source":"Attrib",

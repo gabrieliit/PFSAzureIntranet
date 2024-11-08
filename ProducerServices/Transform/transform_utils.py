@@ -29,20 +29,29 @@ TxnTypeMap={
     "Prici. Rec":"PrincPayment",
     "Int. Rec.":"IntPayment"
 }
+
 NotingDateMap={
-    "Date":{
-        "AltVal":"COBDate",
-        "AltType":"Constant",
-        "Row_Filter":{"CondCol":"Notice Type","CondVal":"--","Op":"=="},
-        "Attr_Filter":{"CondAttr":"NotingType","Op":"NotIn","CondVal":NotingTypeMap["Notice Type"].values()},
-        "CastAltValToType":"date"
-    },
+    'CollVal':{"Val":"COBDate","ValType":"Constant"},
+    'PrincPerGm':{"Val":"COBDate","ValType":"Constant"},
+    'MarginVal':{"Val":"COBDate","ValType":"Constant"},
+    'PrincDue':{"Val":"COBDate","ValType":"Constant"},
+    'IntDue':{"Val":"COBDate","ValType":"Constant"},
+    'PrincRec':{"Val":"COBDate","ValType":"Constant"},
+    'IntRec':{"Val":"COBDate","ValType":"Constant"},
+    'TotalDue':{"Val":"COBDate","ValType":"Constant"},
+    'Notice1':{"Val":"Notice Date","ValType":"SourceAttrib"},
+    'Notice2':{"Val":"Notice Date","ValType":"SourceAttrib"},
+    'Auction':{"Val":"Notice Date","ValType":"SourceAttrib"},
+    'RegLet':{"Val":"Notice Date","ValType":"SourceAttrib"}, 
+    'PendingDays':{"Val":"COBDate","ValType":"Constant"},
+    'RecvdUpto':{"Val":"COBDate","ValType":"Constant"},
+    'IntRate':{"Val":"COBDate","ValType":"Constant"}
 }
 
-def get_constants(data_transformer, const,ret_type=str):
+def get_constants(data_transformer, const):
     #returns constants. Casts to cast_type
     if const=="COBDate":
-        result=cast_to_type(data_transformer.cob_date,ret_type)
+        result=pd.to_datetime(data_transformer.cob_date)
     elif const=="UserName":
         result=session["user"]["name"]
     elif const=="TimeNow":

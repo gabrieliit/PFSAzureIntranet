@@ -65,17 +65,31 @@ class DataTransformer():
             self.rules[target]["MappingRules"]=rules   
         self.targets=ordered_targets 
     
-    def transform_data(self,row_limit=float('inf')):
+    def transform_data(self,row_limit=float('inf'),batch_size=50):
         #popualte target data  model from source data
         target_records={}
         self.row_limit=row_limit
+        self.write_job={
+            "UserName":session["user"]["name"],
+            "FileName":self.source_filename,
+            "nRows":len(self.df),
+            "JobStart":datetime.now(),
+            "RowLimit":self.row_limit
+        }
+        self.job_id_list=[]#dictionary for storing mongodb id object        
         for target in list(self.targets):
+            #add status record in LoadJobs collection 
+            self.write_job["Target"]=target
+            self.write_job["JobProgress"]={}
+            self.write_job["JobProgress"]["Status"]="GatheringRecords"
+            self.db["LoadJobs"].insert_one(self.write_job)
+            self.job_id_list.append(self.write_job.pop("_id"))
             #initialise doc for each target as an empty list of records
-            target_records[target]= [] 
-        for index,row in self.df.iterrows():
-            if index>=row_limit:
-               break 
-            for target in list(self.targets):
+            target_records[target]= []
+        for target in list(self.targets):
+            for index,row in self.df.iterrows():
+                if index>=row_limit:
+                    break 
                 #read the mapping rules for the target
                 rules=self.rules[target]["MappingRules"]              
                 for i in range(self.tgt_metadata[target]["n_col_to_rows"]):#insert n_col_to_rows docs into target collection for each source row
@@ -122,12 +136,37 @@ class DataTransformer():
                                     add_record=False #not a valid record as this value doesnt exist in submap, dont send to MongoDb
                             else:
                                 record[attrib]=rule["MapName"][i][rule["AttribName"][i]]
+                        
+                        #process conditional maps
+                        elif rule["Source"][i]=="ConditionalMap":
+                            key_col=rule["KeyAttrib"][i]
+                            try:
+                                key_val=record[key_col]
+                            except KeyError as e:
+                                add_record=False# not a valid record as the conditional key attribute doesnt exist
+                            val_type=rule["MapName"][i][key_val]["ValType"]
+                            val=rule["MapName"][i][key_val]["Val"]
+                            if val_type=="Constant":
+                                record[attrib]=tu.get_constants(self,val)
+                            elif val_type=="SourceAttrib":
+                                record[attrib]=row[val]
                         #process COB Date mappings
                         elif rule["Source"][i]=="COBDate":
                             record[attrib]=pd.to_datetime(self.cob_date)
                     record["Source"]=self.source_filename
                     if add_record:
                         target_records[target].append(record) 
+            #Update job status in LoadJobs after creating records for each target
+            job_key={
+                "UserName":session["user"]["name"],
+                "FileName":self.source_filename,
+                "JobStart":self.write_job["JobStart"],
+                "Target":target
+            }
+            n_recs=len(target_records[target])
+            n_batches=np.floor(n_recs/batch_size)+1
+            job_status={"JobProgress":{"Status":"RecordsReady","nBatches":n_batches}}            
+            self.db["LoadJobs"].update_one(filter=job_key,update={'$set':job_status})
         #store target records as an object attribute after all source rows have been processed
         self.target_records= target_records
         tot_recs=0
@@ -136,85 +175,72 @@ class DataTransformer():
         msg="### Summary of write operation\n"
         for target,records in self.target_records.items():
             msg+=f"{len(records)} docs were processed for {target} collection.\n"
-        return msg
+        return self.job_id_list
 
                 
     def load_data(self,batch_size=50):
         #send transformed data to mongo db
         results={}
-        write_job={
-            "UserName":session["user"]["name"],
-            "JobStart":datetime.now(),
-            "FileName":self.source_filename,
-            "nRows":len(self.df),
-            "RowLimit":self.row_limit
-        }
-        job_id={}#dictionary for storing mongodb id object
         for target in self.targets:
             results[target]={}
-            write_job["Target"]=target
-            #Perpare a list of write ops for a bulk write operation
-            write_ops=[]
-            if self.tgt_metadata[target]["UpsertFilters"]:
-                #Upsert operations
-                for record in self.target_records[target]:
-                    filters=self.tgt_metadata[target]["UpsertFilters"]
-                    update_cols=[item for item in record.keys() if item not in filters]
-                    #create a dict of filter vals for the record
-                    filter_dict={}
-                    for filter in filters:
-                        filter_dict[filter]=record[filter]
-                    #create a dict of update vals for the record
-                    update_dict={}
-                    update_dict_arr={}
-                    for col in update_cols:
-                        opts=self.db[target].options()
-                        if opts["validator"] ["$jsonSchema"]["properties"][col]["bsonType"]==["array"]: 
-                            update_dict_arr[col]=record[col]
-                        else:
-                            update_dict[col]=record[col]
-                    op=UpdateOne(filter_dict,{"$set":update_dict,"$push":update_dict_arr},upsert=True)
-                    write_ops.append(op)
-            else:
-                #insert operations
-                for record in self.target_records[target]:
-                    op=InsertOne(record)
-                    write_ops.append(op)
-
-            #create batches of write ops
-            n_ops=len(write_ops)
-            batches=[]
-            for i in range(0,n_ops, batch_size):
-                batch=write_ops[i:min(i+batch_size,n_ops)]
-                batches.append(batch)
-            self.n_batches[target]=len(batches)    
-            #insert job record in mongo DB
-            self.write_progress[target]["Status"]="In Progress"
-            self.write_progress[target]["nBatches"]=len(batches)
-            self.write_progress[target]["StartTime"]=datetime.now()
-            write_job["JobProgress"]=self.write_progress[target]
-            self.db["LoadJobs"].insert_one(write_job)
-            #execute batches
-            batch_id=0
-            batch_details=[]
-            #define job key for current job. this will be used to update the job record with progress and results of batches
+            #Prepare a list of write ops for a bulk write operation
+            n_recs=len(self.target_records[target])
+            n_batches=np.floor(n_recs/batch_size)+1
+            #update job record in mongo DB
             job_key={
                 "UserName":session["user"]["name"],
-                "JobStart":write_job["JobStart"],
                 "FileName":self.source_filename,
+                "JobStart":self.write_job["JobStart"],
                 "Target":target
             }
+            self.write_progress[target]["Status"]="Writing Records"
+            self.write_progress[target]["StartTime"]=datetime.now()
+            self.write_progress[target]["nBatches"]=n_batches
+            job_progress={"JobProgress":self.write_progress[target]}
+            self.db["LoadJobs"].update_one(filter=job_key,update={'$set':job_progress})
             #create a consolidated set of write results across batches            
             error_docs=[]
             dup_error_docs=[]
             n_inserts=n_upserts=n_dups=n_matches=0
             results[target]["ErrorStatus"]="NoErrors"
-            #process batches            
-            for batch in batches:
+            #initialize batches
+            batch_id=0
+            batch_details=[]
+            #process batches
+            for i in range(0,n_recs, batch_size):
+                batch=self.target_records[target][i:min(i+batch_size,n_recs)]
+                write_ops=[]          
                 results[target][batch_id]={}
                 batch_start=datetime.now()
+                #Create write operations for the batch
+                for record in batch:      
+                    if self.tgt_metadata[target]["UpsertFilters"]:  
+                        #Upsert operation
+                        filters=self.tgt_metadata[target]["UpsertFilters"]
+                        update_cols=[item for item in record.keys() if item not in filters]
+                        #create a dict of filter vals for the record
+                        filter_dict={}
+                        for filter in filters:
+                            filter_dict[filter]=record[filter]
+                        #create a dict of update vals for the record
+                        update_dict={}
+                        update_dict_arr={}
+                        for col in update_cols:
+                            opts=self.db[target].options()
+                            if opts["validator"] ["$jsonSchema"]["properties"][col]["bsonType"]==["array"]: 
+                                update_dict_arr[col]=record[col]
+                            else:
+                                update_dict[col]=record[col]
+                        op=UpdateOne(filter_dict,{"$set":update_dict,"$push":update_dict_arr},upsert=True)
+                        write_ops.append(op)
+                    else:
+                        #insert operations
+                        for record in self.target_records[target]:
+                            op=InsertOne(record)
+                            write_ops.append(op)  
+                #Bulk write batch
                 try:
-                    result=self.db[target].bulk_write(batch,ordered=False)
+                    result=self.db[target].bulk_write(write_ops,ordered=False)
                     results[target][batch_id]["Status"]="Success" 
                     results[target][batch_id]["WriteOpSummary"]={"n_inserted":result.inserted_count,"n_matched":result.matched_count,"n_upserted":result.upserted_count}
                     results[target][batch_id]["BulkWriteErrorHandler"]=[]
@@ -241,7 +267,7 @@ class DataTransformer():
                     n_matches+=results[target][batch_id]["n_matched"]
                     #if any batch has write errors, update status of target collection as write errors
                     results[target]["ErrorStatus"]="WriteErrors" 
-                self.write_progress[target]["Completion"]=(batch_id+1)/len(batches)*100
+                self.write_progress[target]["Completion"]=(batch_id+1)/n_batches*100
                 batch_end=datetime.now()
                 batch_result=results[target][batch_id]["Status"]
                 batch_record={
@@ -275,16 +301,7 @@ class DataTransformer():
                 "JobProgress":self.write_progress[target],
                 "ErrorDetails":results_to_persist
             }
-            try:
-                self.db["LoadJobs"].update_one(job_key,{"$set":set_dict},upsert=False)
-            except Exception as e:
-                print(e)
-            try:
-                id=write_job.pop("_id")#clear object id from previous iteration
-                job_id[target]=id
-            except KeyError:
-                pass
-        return job_id
+            self.db["LoadJobs"].update_one(job_key,{"$set":set_dict},upsert=False)
     
 class BulkWriteErrorHandler():
     def __init__(self,source, target, bulk_write_errors):
