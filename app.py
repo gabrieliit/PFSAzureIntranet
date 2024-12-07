@@ -50,7 +50,7 @@ def handle_post():
     return response
     
 if __name__ == '__main__':    
-        dash_obj.run_server(debug=True)
+    dash_obj.run_server(debug=True)
 
 """from flask import Flask
 app= Flask(__name__)

@@ -1,32 +1,8 @@
 from ProducerServices.Transform import transform_utils
 TransformMap={
-    "Customers":
-    {
-        "OrderRank":0,
-        "Cardinality":"OnetoOne",
-        "MappingRules":
-        {                
-            "CustName":
-            {
-                "Source":"Attrib",
-                "AttribName":"Name"
-            },
-            "CustPhone":
-            {
-                "Source":"Attrib",
-                "AttribName":"Phone"
-            },
-            "LoanDates":
-            {
-                "Source":"Attrib",
-                "AttribName":"Date",
-            }
-        },
-        "UpsertFilters":["CustName","CustPhone"]
-    },
     "AccountNotings":
     {
-        "OrderRank":2,
+        "OrderRank":1,
         "Cardinality":"OnetoMany",
         "TargetRowsperSourceRow":11,
         "MappingRules":
@@ -56,12 +32,13 @@ TransformMap={
             },
             "Date":
             {
-                "Source":"Attrib",
-                "AltAttribMap":transform_utils.NotingDateMap,
-                "AttribName":"Notice Date",
+                "Source":"ConditionalMap",
+                "KeyAttrib":"NotingType",
+                "MapName":transform_utils.NotingDateMap,
                 #This attribute is dependent on at least one lower dependency order attribute.
                 # When not specfied dependency order is defaulted to zero, ie no dependencies. 
-                "DependencyOrder":1            },
+                "DependencyOrder":1   
+            },
             "Amount":
             {
                 "Source":"Attrib",
@@ -80,11 +57,28 @@ TransformMap={
                 ]
             }
         },
-        "UpsertFilters":["GLNo","NotingType","Date","Amount"]
+        "UpsertFilters":["GLNo","NotingType","Date","Amount"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccountNotings",
+                "AggResultsMap":
+                [
+                    {"Principal Balance":{"ID":{"NotingType":"PrincDue"},"AggField":"CheckSumAmount",}},
+                    {"Interest Outstanding":{"ID":{"NotingType":"IntDue"},"AggField":"CheckSumAmount",}},
+                    {"Interest Received":{"ID":{"NotingType":"IntRec"},"AggField":"CheckSumAmount",}},
+                    {"Notice Type":{"ID":{"NotingType":"Auction"},"AggField":"CheckSumAmount","FileRowFilters":{"Notice Type":"Auction"}}},
+                    {"Notice Type":{"ID":{"NotingType":"Notice1"},"AggField":"CheckSumAmount","FileRowFilters":{"Notice Type":"Notice 1"}}},
+                    {"Notice Type":{"ID":{"NotingType":"Notice2"},"AggField":"CheckSumAmount","FileRowFilters":{"Notice Type":"Notice 2"}}},
+                    {"Interest Rate":{"ID":{"NotingType":"IntRate"},"AggField":"CheckSumAmount",}},
+                    {"Average Val. per Gram":{"ID":{"NotingType":"PrincPerGm"},"AggField":"CheckSumAmount",}},
+                    {"Market Value":{"ID":{"NotingType":"CollVal"},"AggField":"CheckSumAmount",}},
+                ]
+            }
+        ]
     },
     "Accounts":
     {
-        "OrderRank":1,
+        "OrderRank":0,
         "Cardinality":"OnetoOne",
         "MappingRules":
         {
@@ -113,22 +107,21 @@ TransformMap={
                 "Source":"Attrib",
                 "AttribName":"Date"
             },
-            "CollWeight":
-            {
-                "Source":"Attrib",
-                "AttribName":"Weight"
-            },
-            "CollWeight":
-            {
-                "Source":"Attrib",
-                "AttribName":"Weight"
-            },
             "LoanDueDate":
             {
                 "Source":"Attrib",
                 "AttribName":"Due Date"
             },
         },
-        "UpsertFilters":["GLNo","LoanStartDate","LoanAmount"]
+        "UpsertFilters":["GLNo"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccounts",
+                "AggResultsMap":
+                [
+                    {"Amount Given":{"ID":{},"AggField":"CheckSumLoanAmount",}}
+                ]
+            },
+        ]
     },
 }
