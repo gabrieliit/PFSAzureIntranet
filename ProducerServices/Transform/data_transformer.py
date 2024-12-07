@@ -3,11 +3,12 @@ from pymongo.errors import BulkWriteError
 from pymongo import UpdateOne,InsertOne
 import pandas as pd
 from flask import session
-from datetime import datetime 
+from datetime import datetime
+import math
 #import other modules
 from CommonDataServices import mongo_store, data_utils as du
 from ProducerServices.Transform import load_datamaps,transform_utils as tu
-
+from ProducerServices.Aggregations import aggs_map
 #what is the sourc
 
 #Transform the data from LoanDelivery source (see SourceMetadata.py) to MongdDb target schema 
@@ -20,12 +21,16 @@ class DataTransformer():
         self.source_filename=self.source+"_"+cob_date
         self.tgt_metadata={}
         self.warnings=[]
-        ordered_targets=np.empty(len(list(self.rules.keys())),dtype=object)
+        skip_targets=[]#if some targets are already loaded previously and should not be processed again
+        n_targets=len(list(self.rules.keys()))
+        ordered_targets=np.empty(n_targets,dtype=object)
         self.db=mongo_store.mongo_client["PFS_MI"]
         self.write_progress={}
         self.n_batches={}#number of batches per target
-
+    
         for target in list(self.rules.keys()):
+            if target in skip_targets:
+                continue#exit for iteration - do not process targets in skip targets list
             self.tgt_metadata[target]={}
             self.write_progress[target]={"Status":"Not Started","Completion":0.0}
             self.n_batches[target]=0
@@ -63,7 +68,7 @@ class DataTransformer():
                         rules[attrib][item]=[rules[attrib][item]]*n_col_to_rows
             #store ordered rules dict
             self.rules[target]["MappingRules"]=rules   
-        self.targets=ordered_targets 
+        self.targets=ordered_targets
     
     def transform_data(self,row_limit=float('inf'),batch_size=50):
         #popualte target data  model from source data
@@ -78,6 +83,7 @@ class DataTransformer():
         }
         self.job_id_list=[]#dictionary for storing mongodb id object        
         for target in list(self.targets):
+            if not target: continue # dont process if target is skipped
             #add status record in LoadJobs collection 
             self.write_job["Target"]=target
             self.write_job["JobProgress"]={}
@@ -87,75 +93,77 @@ class DataTransformer():
             #initialise doc for each target as an empty list of records
             target_records[target]= []
         for target in list(self.targets):
+            if not target: continue #dont process targets in skip targets list
+            
             for index,row in self.df.iterrows():
                 if index>=row_limit:
                     break 
                 #read the mapping rules for the target
-                rules=self.rules[target]["MappingRules"]              
-                for i in range(self.tgt_metadata[target]["n_col_to_rows"]):#insert n_col_to_rows docs into target collection for each source row
-                    record={}
-                    add_record=True
-                    for attrib,rule in rules.items():
-                        """
-                        if row["Notice Type"]=="Auction" and attrib=="NotingType" and rule["AttribName"][i] in ["Notice Type","Weight"]:
-                            breakpoint()
-                        #process index. NOTE: Indices are not advisable in MongoDB schemas, so all unessential indices have been removed from schema.
-                        if rule["Source"][i]=="Index": 
-                            #increment and store index
-                            new_index=self.tgt_metadata[target]["Index"]+1
-                            self.tgt_metadata[target]["Index"]=new_index
-                            record[attrib]=new_index
-                        """                        
-                        #process 1 to 1 mappings
-                        if rule["Source"][i]=="Attrib":
-                            try:
-                                #check if the current attrib uses an alt defs
-                                alt_attrib_map=rule["AltAttribMap"][i]
-                                row_cond=alt_attrib_map[attrib]["Row_Filter"]
-                                attr_cond=alt_attrib_map[attrib]["Attr_Filter"]
-                                alt_type=alt_attrib_map[attrib]["AltType"]
-                                cast_type=alt_attrib_map[attrib]["CastAltValToType"]
-                                alt_val=alt_attrib_map[attrib]["AltVal"]
-                                use_alt_def=tu.evaluate_condition(row,record,row_cond,attr_cond)
-                                if use_alt_def:
-                                    if alt_type=="Constant":
-                                        record[attrib]=tu.get_constants(self,alt_val,cast_type)
-                                else:
-                                    record[attrib]=row[rule["AttribName"][i]]#map value from the main col
-                            except:
-                                #Attribute doesnt have alt defs, just pull the value from mapped column
-                                record[attrib]=row[rule["AttribName"][i]]
-                        #process attribut mappings, ie where the column is filled with the same value 
-                        elif rule["Source"][i]=="Map":
-                            if type(rule["MapName"][i][rule["AttribName"][i]])==dict:
-                                #the mapping has a further submap based on attribute value keys
-                                sub_map=rule["MapName"][i][rule["AttribName"][i]]
+                rules=self.rules[target]["MappingRules"]
+                #process any conditional inclusion rules
+                try:
+                    incl_rule=self.rules[target]["IncludeCriteria"]
+                    if incl_rule["FilterType"]=="AttribVal":
+                        vals=incl_rule["IncludedVals"]
+                        attrib=incl_rule["AttribName"]
+                        add_record= True if row[attrib] in vals else False
+                except:
+                    add_record=True #no conditional inclusion criteria, process all records
+                if add_record:#process row if inclusion criteria not violated
+                    for i in range(self.tgt_metadata[target]["n_col_to_rows"]):#insert n_col_to_rows docs into target collection for each source row
+                        record={}
+                        for attrib,rule in rules.items():                       
+                            #process 1 to 1 mappings
+                            if rule["Source"][i]=="Attrib":
                                 try:
-                                    record[attrib]=sub_map[row[rule["AttribName"][i]]]
-                                except KeyError:
-                                    add_record=False #not a valid record as this value doesnt exist in submap, dont send to MongoDb
-                            else:
-                                record[attrib]=rule["MapName"][i][rule["AttribName"][i]]
-                        
-                        #process conditional maps
-                        elif rule["Source"][i]=="ConditionalMap":
-                            key_col=rule["KeyAttrib"][i]
-                            try:
-                                key_val=record[key_col]
-                            except KeyError as e:
-                                add_record=False# not a valid record as the conditional key attribute doesnt exist
-                            val_type=rule["MapName"][i][key_val]["ValType"]
-                            val=rule["MapName"][i][key_val]["Val"]
-                            if val_type=="Constant":
-                                record[attrib]=tu.get_constants(self,val)
-                            elif val_type=="SourceAttrib":
-                                record[attrib]=row[val]
-                        #process COB Date mappings
-                        elif rule["Source"][i]=="COBDate":
-                            record[attrib]=pd.to_datetime(self.cob_date)
-                    record["Source"]=self.source_filename
-                    if add_record:
-                        target_records[target].append(record) 
+                                    #check if the current attrib uses an alt defs
+                                    alt_attrib_map=rule["AltAttribMap"][i]
+                                    row_cond=alt_attrib_map[attrib]["Row_Filter"]
+                                    attr_cond=alt_attrib_map[attrib]["Attr_Filter"]
+                                    alt_type=alt_attrib_map[attrib]["AltType"]
+                                    cast_type=alt_attrib_map[attrib]["CastAltValToType"]
+                                    alt_val=alt_attrib_map[attrib]["AltVal"]
+                                    use_alt_def=tu.evaluate_condition(row,record,row_cond,attr_cond)
+                                    if use_alt_def:
+                                        if alt_type=="Constant":
+                                            record[attrib]=tu.get_constants(self,alt_val,cast_type)
+                                    else:
+                                        record[attrib]=row[rule["AttribName"][i]]#map value from the main col
+                                except:
+                                    #Attribute doesnt have alt defs, just pull the value from mapped column
+                                    record[attrib]=row[rule["AttribName"][i]]
+                            #process attribut mappings, ie where the column is filled with the same value 
+                            elif rule["Source"][i]=="Map":
+                                if type(rule["MapName"][i][rule["AttribName"][i]])==dict:
+                                    #the mapping has a further submap based on attribute value keys
+                                    sub_map=rule["MapName"][i][rule["AttribName"][i]]
+                                    try:
+                                        record[attrib]=sub_map[row[rule["AttribName"][i]]]
+                                    except KeyError:
+                                        add_record=False #not a valid record as this value doesnt exist in submap, dont send to MongoDb
+                                else:
+                                    record[attrib]=rule["MapName"][i][rule["AttribName"][i]]
+                            
+                            #process conditional maps
+                            elif rule["Source"][i]=="ConditionalMap":
+                                key_col=rule["KeyAttrib"][i]
+                                try:
+                                    key_val=record[key_col]
+                                except KeyError as e:
+                                    add_record=False# not a valid record as the conditional key attribute doesnt exist
+                                val_type=rule["MapName"][i][key_val]["ValType"]
+                                val=rule["MapName"][i][key_val]["Val"]
+                                if val_type=="Constant":
+                                    record[attrib]=tu.get_constants(self,val)
+                                elif val_type=="SourceAttrib":
+                                    record[attrib]=row[val]
+                            #process COB Date mappings
+                            elif rule["Source"][i]=="COBDate":
+                                record[attrib]=pd.to_datetime(self.cob_date)
+                        record["Source"]=self.source_filename
+                        if add_record:
+                            target_records[target].append(record)
+                        add_record=True#reset flag for next record 
             #Update job status in LoadJobs after creating records for each target
             job_key={
                 "UserName":session["user"]["name"],
@@ -170,7 +178,9 @@ class DataTransformer():
         #store target records as an object attribute after all source rows have been processed
         self.target_records= target_records
         tot_recs=0
-        for target in self.targets : tot_recs+=len(target_records[target]) 
+        for target in self.targets : 
+            if not target: continue #ignore targets in skip targets list
+            tot_recs+=len(target_records[target]) 
         self.tot_recs=tot_recs
         msg="### Summary of write operation\n"
         for target,records in self.target_records.items():
@@ -182,6 +192,7 @@ class DataTransformer():
         #send transformed data to mongo db
         results={}
         for target in self.targets:
+            if not target: continue #skip target
             results[target]={}
             #Prepare a list of write ops for a bulk write operation
             n_recs=len(self.target_records[target])
@@ -296,12 +307,89 @@ class DataTransformer():
             # Create sub-dictionary
             keys_to_persist={"ErrorStatus","BulkWriteErrors","DuplicateErrors"}
             results_to_persist = {key: results[target][key] for key in keys_to_persist if key in results[target]}
-            #update completion of target collection updates
+            check_sums=[]
+            checksum_OK=True
+            checkcount_OK=True
+            #calculate checksums and verify
+            #Execute agg pipeline for checksums
+            collection_name=target
+            for check in self.rules[target]["CheckAggs"]:
+                pipeline_name=check["AggPipeline"] 
+                pipeline=aggs_map.AggPipelines[collection_name][pipeline_name]
+                agg_result=self.db[collection_name].aggregate(pipeline)
+                agg_result=du.mdb_query_postproc(agg_result)
+                for mapping in check["AggResultsMap"] :
+                    for col,item in mapping.items():
+                        #get checkagg val from the db
+                        id=item["ID"]
+                        id["Source"]=self.source_filename#add filename to id field to filter out the checksums for the current file
+                        mdb_val=agg_result
+                        for id_col,id_val in id.items():#Find the agg result doc corresponding to the ID and File
+                            mdb_val=mdb_val[mdb_val[id_col]==id_val]
+                        agg_field=item["AggField"]
+                        #create and populate checksum doc
+                        checksum_doc={}
+                        if not math.isinf(self.row_limit): #filter first  row_limit rows of the file
+                            df=self.df.head(self.row_limit)
+                        else:
+                            df=self.df
+                        try:
+                            row_filters=item["FileRowFilters"]
+                        except KeyError:
+                            row_filters=None
+                        if row_filters:#filter out rows included in the checkcount
+                            for key,val in row_filters.items():
+                                df=df[df[key]==val]
+                        #calc Checksum
+                        if agg_field:
+                            try:
+                                mdb_sum=float(mdb_val[agg_field].iloc[0])
+                            except IndexError:#no rows matching the checksum filters
+                                mdb_sum=0.0
+                            #get checkagg val from file
+                            try:
+                                file_sum=df[col].astype(float).sum()
+                            except ValueError: # col contains non-numerals
+                                file_sum=0.0
+                        else:
+                            mdb_sum="NA"
+                            file_sum="NA"
+                        #calc filecount
+                        try:
+                            mdb_count=int(mdb_val["CheckCount"].iloc[0])
+                        except IndexError:
+                            mdb_count=0#no rows matching the checksum filters
+                        try:
+                            keys=item["CompoundPK"]#if count is based on a compound PK
+                            file_count=len(df.drop_duplicates(subset=keys))#count unique PK occurences in df
+                            checksum_doc["SourceField"]=f"Unique {keys} combos"
+                        except KeyError:
+                            file_count=len(df)
+                            checksum_doc["SourceField"]=col
+                        #find the col that is being aggregated in mdb for checksum
+                        agg_col=aggs_map.find_checksum_agg_col(pipeline,agg_field)
+                        checksum_doc["MDBField"]=f"{collection_name}.{agg_col}"
+                        checksum_doc["MDBFilter"]=f"{str(id)}"
+                        checksum_doc["FileSum"]=str(file_sum)
+                        checksum_doc["MDBSum"]=str(mdb_sum)
+                        checksum_doc["FileCount"]=str(file_count)
+                        checksum_doc["MDBCount"]=str(mdb_count)
+                        check_sums.append(checksum_doc)
+                        if type(file_sum) != str and type(mdb_sum) !=str:
+                            if abs(file_sum-mdb_sum)>0.1: checksum_OK=False
+                        else:#"NA" assigned to either file_Sum or mdb_sum
+                            if file_sum!=mdb_sum:checksum_OK=False
+                        if file_count!=mdb_count: checkcount_OK=False
+            #update completion of target collection updates and checksums for the job
             set_dict={
                 "JobProgress":self.write_progress[target],
-                "ErrorDetails":results_to_persist
+                "ErrorDetails":results_to_persist,
+                "CheckSums":check_sums,
+                "CheckSumOK":checksum_OK,
+                "CheckCountOK":checkcount_OK
             }
             self.db["LoadJobs"].update_one(job_key,{"$set":set_dict},upsert=False)
+
     
 class BulkWriteErrorHandler():
     def __init__(self,source, target, bulk_write_errors):

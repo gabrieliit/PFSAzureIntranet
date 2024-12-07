@@ -125,7 +125,7 @@ def register_callbacks(app):
                         if dtype.startswith("date"):
                             str_format=dtype[dtype.find("date-")+len("date-"):]#date dtype is specified as date-formatstring in ColTypes metadate
                             # Convert the date strings to dd-mm-yyyy format
-                            df[col] = pd.to_datetime(df[col],errors="coerce").dt.strftime(str_format)    
+                            df[col] = pd.to_datetime(df[col],format=str_format,errors="coerce").dt.strftime(str_format)  
                 #create dash table to display
                 children=sc.df_to_dash_table(df,'dataloader-tbl-view-data')
                 disabled=False
@@ -175,10 +175,11 @@ def register_callbacks(app):
             source_obj.df=df
             global mapper#define as global so we can access it in other callbacks
             mapper=dt.DataTransformer(source_obj,cob)
-            max_rows=float("inf") if row_limit==None else int(row_limit) 
+            max_rows=len(df) if row_limit==None else int(row_limit) 
             job_id_list=mapper.transform_data(row_limit=max_rows)
             mapper.load_data(batch_size=50)
             njobs=len(job_id_list)
-            msg=f"{njobs} collections will be updated. You can track jobs using the following IDs - \n {str(job_id_list)} "
+            msg=f"{njobs} collection(s) updated. You can track jobs in MI->Data Load Jobs tab using the following IDs - \n {str(job_id_list)} "
             return msg, dash.no_update,dash.no_update
         return dash.no_update,dash.no_update,dash.no_update
+    

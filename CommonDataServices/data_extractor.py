@@ -6,14 +6,10 @@ from CommonDataServices import data_queries as dq, data_utils as du
 class DataSource_Old(): # this should be inherited from DataSource
     def __init__(self,source,df):    
         self.source=source
-        self.pp_ops=[]
         try:
-            #add derived cols to pre-process tasks
-            op=ProducerSources[source]["DerivedCols"]
-            op["OpType"]="DerivedCols"
-            self.pp_ops.append(op)
+            self.pp_ops=ProducerSources[source]["PreProcessOps"]
         except KeyError as e:
-            pass#no derived cols
+            self.pp_ops=[]#no pre-process ops for this source    
         n_drop_rows=ProducerSources[source]["DropRowsEnd"]
         df.drop(df.tail(n_drop_rows).index, inplace=True)
         df.columns=ProducerSources[source]["ColTypes"].keys()
@@ -27,17 +23,26 @@ class DataSource_Old(): # this should be inherited from DataSource
 
     def pre_process_data(self):
         for op in self.pp_ops:
-            if op["OpType"]=="DerivedCols":
-                if op["Method"]=="SplitCol":
-                    src_col=op["SourceCols"][0]
-                    method=op["SplitMethod"]
+            op_name=next(iter(op))
+            if op_name=="DerivedCols":
+                if op[op_name]["Method"]=="SplitCol":
+                    src_col=op[op_name]["SourceCols"][0]
+                    method=op[op_name]["SplitMethod"]
                     if method=="UseDelimiter":
-                        val=op["DelimiterVal"]
+                        val=op[op_name]["DelimiterVal"]
                         df=self.df[src_col].str.split(val,expand=True)
                         #Name the split columns
-                        df.columns=op["TargetCols"]
-                        for col,dtype in zip(df.columns,op["TargetDataTypes"]): df[col]=du.cast_dfcol_to_type(df[col],dtype)
+                        df.columns=op[op_name]["TargetCols"]
+                        for col,dtype in zip(df.columns,op[op_name]["TargetDataTypes"]): df[col]=du.cast_dfcol_to_type(df[col],dtype)
                         self.df=pd.concat([self.df,df], axis=1)
+            elif op_name=="TrimCols":
+                cols=op[op_name]["Cols"]
+                for col in cols:
+                    self.df[col]=self.df[col].str.strip()
+            elif op_name=="ToUpper":
+                cols=op[op_name]["Cols"]
+                for col in cols:
+                    self.df[col]=self.df[col].str.upper()            
 
 def source_factory(source,dataset_type,**kwargs):
     source_metadata=ConsumerSources[source] if dataset_type=="Consumer" else ProducerSources[source]

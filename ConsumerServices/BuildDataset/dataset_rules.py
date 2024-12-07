@@ -12,7 +12,7 @@ DatasetBuildRules={
                         {
                             "Name":"LoadJobs",
                             "Type":"ProducerDataset",
-                            "ColFilters":
+                            "ColFilters":#cols of producer dataset to pull. any array/dict attribs will be flattenned before attrib list mappings are applied
                             {
                                 "_id":True,
                                 "UserName":True,
@@ -22,11 +22,13 @@ DatasetBuildRules={
                                 "RowLimit":True,
                                 "Target":True,
                                 "JobProgress":True,
+                                "CheckSumOK":True,
+                                "CheckCountOK":True
                             }
                         }
                     ],
                     "Cardinality":"OneToOne",
-                    "AttribList":
+                    "AttribList":#dataset attribs.
                     {
                         "JobID":{
                             "AttribPath":"_id",
@@ -40,6 +42,12 @@ DatasetBuildRules={
                         "FileName":{
                             "AttribPath":"FileName",
                         },
+                        "CheckSumOK":{
+                            "AttribPath":"CheckSumOK",
+                        },
+                        "CheckCountOK":{
+                            "AttribPath":"CheckCountOK",
+                        },                           
                         "nRows":{
                             "AttribPath":"nRows",
                         },
@@ -164,9 +172,6 @@ DatasetBuildRules={
                         "SourceRowNo":{
                             "AttribPath":"ErrorDetails.BulkWriteErrors.Index",
                         },
-                        "SourceRowNo":{
-                            "AttribPath":"ErrorDetails.BulkWriteErrors.Index",
-                        },
                         "SourceRowIDKeys":{
                             "AttribPath":"ErrorDetails.BulkWriteErrors.QueryParams",
                         },
@@ -206,5 +211,40 @@ DatasetBuildRules={
                 }   
             ]
         }#End of Stage 1 build def for WriteErrors datase
-    }#End of WriteErrors dataset def
+    },#End of WriteErrors dataset def
+    "CheckSums":
+    {
+        "OutputJob":{"Stage":1,"BuildJobName":"CheckSums_1"},
+        "BuildStages":
+        {
+            1:[
+                {                
+                    "BuildJobName":"CheckSums_1",
+                    "BuildType":"AttribSelect",
+                    "Sources":[
+                        {
+                            "Name":"LoadJobs",
+                            "Type":"ProducerDataset",
+                            "ColFilters":#cols of producer dataset to pull. any array/dict attribs will be flattenned before attrib list mappings are applied
+                            {
+                                "CheckSums":True
+                            }
+                        }
+                    ],
+                    "Cardinality":"OneToMany",
+                    "Cardinality":"ArrayAttribSource",
+                    "AttribList":#dataset attribs.
+                    {
+                        "SourceField":{"AttribPath":"CheckSums.SourceField"},
+                        "MDBField":{"AttribPath":"CheckSums.MDBField"},
+                        "MDBFilter":{"AttribPath":"CheckSums.MDBFilter"},
+                        "FileSum":{"AttribPath":"CheckSums.FileSum"},
+                        "MDBSum":{"AttribPath":"CheckSums.MDBSum"},
+                        "FileCount":{"AttribPath":"CheckSums.FileCount"},
+                        "MDBCount":{"AttribPath":"CheckSums.MDBCount"},
+                    },#End of attrib list for CheckSums_1 job
+                }#End of CheckSums_1 def
+            ]#End of Stage 1 build jobs list for CheckSums_1 def       
+        }#End of all stages of build def
+    },#End of Checksums_1 dataset def
 }

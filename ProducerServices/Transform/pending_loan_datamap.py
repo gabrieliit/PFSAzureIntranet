@@ -24,10 +24,21 @@ TransformMap={
             "LoanDates":
             {
                 "Source":"Attrib",
-                "AttribName":"Date",
+                "AttribName":"Date"
             }
         },
-        "UpsertFilters":["CustName","CustPhone"]
+        "UpsertFilters":["CustName","CustPhone"],
+        "CheckAggs":[               
+            {
+                "AggPipeline":"CheckSumCustomers",
+                "AggResultsMap":
+                [
+                    {
+                        "Name":{"ID":{},"AggField":None,"CompoundPK":["Name","Phone"]}
+                    }
+                ],#AggField is None so only count will be checked (this is added by default to check agg op hnece not specified)   
+            }     
+        ]   
     },
     "AccountNotings":
     {
@@ -76,7 +87,23 @@ TransformMap={
                 ]
             }
         },
-        "UpsertFilters":["GLNo","NotingType","Date","Amount"]
+        "UpsertFilters":["GLNo","NotingType","Date","Amount"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccountNotings",
+                "AggResultsMap":
+                [
+                    {"Principal Bal.":{"ID":{"NotingType":"PrincDue"},"AggField":"CheckSumAmount",}},
+                    {"Principal Rec.":{"ID":{"NotingType":"PrincRec"},"AggField":"CheckSumAmount",}},
+                    {"Int. Bal":{"ID":{"NotingType":"IntDue"},"AggField":"CheckSumAmount",}},
+                    {"Int. Rec.":{"ID":{"NotingType":"IntRec"},"AggField":"CheckSumAmount",}},
+                    {"Notice Type":{"ID":{"NotingType":"Auction"},"AggField":"CheckSumAmount","FileRowFilters":{"Notice Type":"Auction"}}},
+                    {"Notice Type":{"ID":{"NotingType":"Notice1"},"AggField":"CheckSumAmount","FileRowFilters":{"Notice Type":"Notice 1"}}},
+                    {"Notice Type":{"ID":{"NotingType":"Notice2"},"AggField":"CheckSumAmount","FileRowFilters":{"Notice Type":"Notice 2"}}},
+                    {"Int. Rate":{"ID":{"NotingType":"IntRate"},"AggField":"CheckSumAmount",}},
+                ]
+            }
+        ]
     },
     "Accounts":
     {
@@ -125,6 +152,16 @@ TransformMap={
                 "AttribName":"Scheme"
             },
         },
-        "UpsertFilters":["GLNo","LoanStartDate","LoanAmount"]
+        "UpsertFilters":["GLNo"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccounts",
+                "AggResultsMap":
+                [
+                    {"Weight":{"ID":{},"AggField":"CheckSumWeight",}},
+                    {"Amt. Given":{"ID":{},"AggField":"CheckSumLoanAmount",}}
+                ]
+            },
+        ]
     },
 }

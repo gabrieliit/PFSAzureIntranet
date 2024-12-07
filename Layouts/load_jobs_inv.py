@@ -19,7 +19,7 @@ def draw_page_content():
             html.H3("Load Jobs List"),
             dbc.Row(
             [
-                dbc.Col(dbc.Button("Refresh Job Details",id="dataloadjobs-btn-refresh-jobs"),width=3),
+                dbc.Col(dbc.Button("Refresh Job Details",id="dataloadjobs-btn-refresh-jobs"),width=2),
                 dbc.Col(dbc.RadioItems(options=[
                     {"label":"Last Run","value":1},
                     {"label":"Last 5 Runs","value":2},
@@ -27,14 +27,15 @@ def draw_page_content():
                 ], 
                 value=1,
                 inline=True,
-                id="dataloadjobs-rdo-jobsfilter"),width=6),
-                dbc.Col(dbc.Button("View Write Errors",id="dataloadjobs-btn-view-errors",disabled=True),width=3),
+                id="dataloadjobs-rdo-jobsfilter"),width=4),
+                dbc.Col(dbc.Button("View Write Errors",id="dataloadjobs-btn-view-errors",disabled=True),width=2),
+                dbc.Col(dbc.Button("View CheckSums",id="dataloadjobs-btn-view-checksums",disabled=True),width=2),            
             ]
             ),
             html.Div(id="dataloadjobs-div-job-details"),
             html.Div([
-                html.H3("Write Errors List"),
-                html.Div(dbc.Alert("Refresh Job details, select a job from jobs list and click View Write Errors button",color="warning"),id="dataloadjobs-div-error-details"),
+                html.H3(id="dataloadjobs-H3-errors-and-checksums"),
+                html.Div(dbc.Alert("Refresh Job details, select a job from jobs list and click View Write Errors or View CheckSums button",color="warning"),id="dataloadjobs-div-error-details"),
             ]
             )
         ],
@@ -46,6 +47,7 @@ def register_callbacks(app):
     @app.callback(
         Output("dataloadjobs-div-job-details","children"),
         Output("dataloadjobs-btn-view-errors","disabled"),
+        Output("dataloadjobs-btn-view-checksums","disabled"),
         Input("dataloadjobs-btn-refresh-jobs",'n_clicks'),
         State("dataloadjobs-rdo-jobsfilter",'value')
     )
@@ -64,25 +66,33 @@ def register_callbacks(app):
         else:
             result=dash.no_update
             disable=True
-        return result,disable
+        return result,disable,disable
     
     @app.callback(
         Output("dataloadjobs-div-error-details","children"),
+        Output("dataloadjobs-H3-errors-and-checksums","children"),
         Input("dataloadjobs-btn-view-errors","n_clicks"),
+        Input("dataloadjobs-btn-view-checksums","n_clicks"),
         State("dataloadjobs-div-job-details","children"),
     )
-    def view_write_errors(nclicks,jobs_tbl):
-        if nclicks:
+    def view_errors_and_checksums(nclicks,nclicks_cs,jobs_tbl):
+        result=dash.no_update#no UI updated if no buttons have been clicked
+        ctx=dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        heading=""
+        if trigger_id in ["dataloadjobs-btn-view-errors","dataloadjobs-btn-view-checksums"]:
             try:
                 active_cell=jobs_tbl['props']['active_cell']
                 row=active_cell['row']
                 job_id=ObjectId(jobs_tbl['props']['data'][row]['JobID'])
-                dsb=create_dataset.DatasetBuilder("WriteErrors")
+                if trigger_id=="dataloadjobs-btn-view-errors"  :#display write errors
+                    dsb=create_dataset.DatasetBuilder("WriteErrors")
+                    heading="Write Errors List"
+                elif trigger_id=="dataloadjobs-btn-view-checksums":#display checksums
+                    dsb=create_dataset.DatasetBuilder("CheckSums")
+                    heading="Checksums"
                 dsb.create_dataset(filters={"_id":job_id})
-                result=sc.df_to_dash_table(dsb.output)
-                enable= True if (len(dsb.output)>0) else False
+                result=sc.df_to_dash_table(dsb.output)   
             except KeyError:
                 result=dbc.Alert("Select a row from the Job Details table and then click the view errors button", color="warning")
-        else:
-            result=dash.no_update
-        return result
+        return result,heading
