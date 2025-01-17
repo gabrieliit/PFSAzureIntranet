@@ -9,7 +9,7 @@ import base64
 import io
 from datetime import date
 #import project modules
-from Layouts import styles, shared_components as sc
+from Pages import styles, shared_components as sc
 from ProducerServices.Extract.source_metadata import ProducerSources
 from CommonDataServices import data_extractor as de
 from ProducerServices.Transform import data_transformer as dt
@@ -153,7 +153,7 @@ def register_callbacks(app):
             raw_df=pd.DataFrame(data)
             source_obj=de.DataSource_Old(source,raw_df)
             df=source_obj.df
-            dtypes=ProducerSources[source]["ColTypes"]
+            dtypes=ProducerSources[source]["ColTypes"].copy()
             #add derived col dtypes
             try:
                 der_cols=ProducerSources[source]["DerivedCols"]["TargetCols"]
@@ -175,7 +175,7 @@ def register_callbacks(app):
             source_obj.df=df
             global mapper#define as global so we can access it in other callbacks
             mapper=dt.DataTransformer(source_obj,cob)
-            max_rows=len(df) if row_limit==None else int(row_limit) 
+            max_rows=len(df) if (row_limit==None or row_limit=='') else int(row_limit) 
             job_id_list=mapper.transform_data(row_limit=max_rows)
             mapper.load_data(batch_size=50)
             njobs=len(job_id_list)
