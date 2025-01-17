@@ -93,7 +93,7 @@ ProducerSources = {
         "FileName": "Receipt",
         "SkipRows": 4,
         "ColTypes": {
-            "Rec. Dt":str,
+            "Rec. Dt":"date-%d/%m/%Y",
             "Rec. No":str,
             "GL. No. - GL Date":str,
             "Name":str,

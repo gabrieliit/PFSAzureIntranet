@@ -7,9 +7,10 @@ from urllib.parse import parse_qs
 from flask import session,url_for
 import os
 # import required project modules
-from Layouts import homepage, scratch, shared_components as sc
-from Layouts import user_auth_flow,styles,layouts_config,dataloader,load_jobs_inv
-from Layouts.Forms import forms_config
+from Pages import scratch, shared_components as sc
+from Pages import user_auth_flow,styles,layouts_config,dataloader,load_jobs_inv,accounts,customers,transactions
+from Pages.Forms import forms_config
+from Pages.Home import home_layout
 
 
 def parse_url_params(url):
@@ -75,7 +76,7 @@ def register_callbacks(app):
                         home_ext= []      
                 else:
                     home_ext=[]
-                pg_content=homepage.draw_page_content(home_ext)
+                pg_content=home_layout.draw_page_content(home_ext)
             elif pathname == '/login':
                 pg_elements= [dcc.Location(id="redirect_to_login",href="/login")]
                 if query:
@@ -96,6 +97,12 @@ def register_callbacks(app):
                 pg_content=dataloader.draw_page_content()
             elif pathname=='/dataloadjobs':
                 pg_content=load_jobs_inv.draw_page_content()
+            elif pathname=='/accounts':
+                pg_content=accounts.draw_page_content()
+            elif pathname=='/customers':
+                pg_content=customers.draw_page_content()
+            elif pathname=='/transactions':
+                pg_content=transactions.draw_page_content()
             # Add more pages as needed
             else:
                 pg_content= [html.Label(f'404 - {pathname} this page is under development',style=styles.CONTENT_STYLE)]

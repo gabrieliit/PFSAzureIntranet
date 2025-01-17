@@ -1,6 +1,6 @@
 #import other modules
-from CommonDataServices import mongo_store, data_utils as du
-from ProducerServices.Transform import load_datamaps,transform_utils as tu
+from CommonDataServices import mongo_store, data_utils as du, transform_utils as tu
+from ProducerServices.Transform import load_datamaps
 
 class DataQuery():
     def __init__(self,db_name,db_type):
@@ -18,3 +18,8 @@ class DataQuery():
                 cursor=self.db[dataset].find(filter,projection=columns)
                 df=du.mdb_query_postproc(cursor,dtype)
                 return df
+    
+    def aggregate(self,dataset,agg_pipe):
+        cursor=self.db[dataset].aggregate(agg_pipe)
+        df=du.mdb_query_postproc(cursor)
+        return df
