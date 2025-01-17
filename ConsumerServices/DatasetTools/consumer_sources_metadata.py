@@ -1,0 +1,57 @@
+import os
+from ConsumerServices.DatasetTools.DatasetDefs import load_jobs_aggs
+
+ConsumerSources={
+    "LoadJobs":{
+        "Format":"MongoStoreCollection",
+        "ConnectionDetails":{
+            "DbName":"PFS_MI",
+            "CollectionName":"LoadJobs"
+        },
+        "Owner":"gabrielthomas.v@gmail.com",
+        "AggDefsModule":"ConsumerServices.DatasetTools.DatasetDefs.load_jobs_aggs"
+    },
+    "Accounts":{
+        "Format":"MongoStoreCollection",
+        "ConnectionDetails":{
+            "DbName":"PFS_MI",
+            "CollectionName":"Accounts"
+        },
+        "Owner":"gabrielthomas.v@gmail.com",
+        "AggDefsModule":"ConsumerServices.DatasetTools.DatasetDefs.accounts_aggs"
+    },
+    "Customers":{
+        "Format":"MongoStoreCollection",
+        "ConnectionDetails":{
+            "DbName":"PFS_MI",
+            "CollectionName":"Customers"
+        },
+        "Owner":"gabrielthomas.v@gmail.com",
+       "AggDefsModule":"ConsumerServices.DatasetTools.DatasetDefs.customers_aggs"
+    },    
+    "Transactions":{
+        "Format":"MongoStoreCollection",
+        "ConnectionDetails":{
+            "DbName":"PFS_MI",
+            "CollectionName":"Transactions"
+        },
+        "Owner":"gabrielthomas.v@gmail.com",
+        "AggDefsModule":"ConsumerServices.DatasetTools.DatasetDefs.transactions_aggs"
+    },
+    "GoldPrices":{
+        "Format":"MongoStoreCollection",
+        "ConnectionDetails":{
+            "DbName":"PFS_MI",
+            "CollectionName":"GoldPrices"
+        },
+        "Owner":"gabrielthomas.v@gmail.com",
+    },
+    "MetalPricesAPI":{
+        "Format":"API",
+        "ConnectionDetails":{
+            "APIKey":os.environ["METAL_PRICE_API_KEY"],
+            "URL":"https://api.metalpriceapi.com/v1/"
+        },
+        "Owner":"External",
+    },
+}

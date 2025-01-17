@@ -1,7 +1,7 @@
 from dash import dcc, html,dash_table
 import dash_bootstrap_components as dbc
 #import project modules
-from Layouts import styles
+from Pages import styles
 
 # Define your company logo and name (customize as needed)
 company_logo_url = "https://example.com/logo.png"
@@ -57,17 +57,16 @@ side_bar = html.Div(
         dbc.Nav(
             [
                 dbc.NavLink("Home",href="/", active="exact"),
+                dbc.NavLink("Accounts", href="/accounts", active=False),
+                dbc.NavLink("Customers", href="/customers", active=False),
+                dbc.NavLink("Transactions", href="/transactions", active=False),
                 dbc.DropdownMenu
                 (
                     [
-                        dbc.DropdownMenuItem("Loans", href="/loans",active=False),
-                        dbc.DropdownMenuItem("Receipts", href="/receipts", active=False),
-                        dbc.DropdownMenuItem("Accounts", href="/accounts", active=False),
-                        dbc.DropdownMenuItem("Customers", href="/customers", active=False),
                         dbc.DropdownMenuItem("Data Loader", href="/dataloader", active=False),
                         dbc.DropdownMenuItem("Data Load Jobs", href="/dataloadjobs", active=False),
                     ],
-                    label="MI", 
+                    label="Manage Data", 
                     nav=True,
                 ),
                 dbc.NavLink("Admin", href="/admin", active="exact"),

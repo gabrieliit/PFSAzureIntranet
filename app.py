@@ -7,10 +7,10 @@ from dash import html
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 #import local modules
-import Layouts.index as index
-from Layouts import layouts_config
-from Layouts.Forms import forms_config
-from Layouts.index import register_callbacks,draw_page_outline
+import Pages.index as index
+from Pages import layouts_config
+from Pages.Forms import forms_config
+from Pages.index import register_callbacks,draw_page_outline
 
 #Test comment
 dash_obj = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])

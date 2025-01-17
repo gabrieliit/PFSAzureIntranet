@@ -1,4 +1,4 @@
-from ProducerServices.Transform import transform_utils
+from CommonDataServices import transform_utils
 TransformMap={
     "Transactions":
     {
@@ -73,19 +73,72 @@ TransformMap={
                 "Source":"Attrib",
                 "AttribName":"GL. No.",
             },
-            "LoanStatus":
+            "CollWeight":
             {
                 "Source":"Attrib",
-                "AttribName":"ST",
+                "AttribName":"Weight",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add CollWeight in the record if the Loan Satus attribute =="CL"       
+            },
+            "PrincPaymentAmounts":
+            {
+                "Source":"Attrib",
+                "AttribName":"Prici. Rec",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":1,
+                },#only add Principle payment if the Princi Rec >0.0 in source file        
+            },
+            "PrincPaymentDates":
+            {
+                "Source":"Attrib",
+                "AttribName":"Rec. Dt",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":1,
+                },#only add Principle payment if the Princi Rec >0.0 in source file      
             },
             "LoanStartDate":
             {
                 "Source":"Attrib",
                 "AttribName":"GL Date"
-            }
+            },
+            "LoanStatus":
+            {
+                "Source":"Attrib",
+                "AttribName":"ST",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"             
+            },            
+            "LoanClosureDate":
+            {
+                "Source":"Attrib",
+                "AttribName":"Rec. Dt",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"
+                "DependencyOrder":1
+            },
         },
         "UpsertFilters":["GLNo"],
-        "IncludeCriteria":{"FilterType":"AttribVal","AttribName":"ST","IncludedVals":["CL"]},#only add/update records if the source value is in IncludedVals list
+        "IncludeCriteria":
+        [
+            {
+                "CondType":"SourceValBasedInclusion",
+                "KeyAttrib":"ST",
+                "InclusionRule":{"Param":"CL","CondOp":"Eq"}
+            },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"
+            {
+                "CondType":"SourceValBasedInclusion",
+                "KeyAttrib":"Prici. Rec",
+                "InclusionRule":{"Param":0.0,"CondOp":"Gt"}
+            },#only add Principle payment if the Princi Rec >0.0 in source file                      
+        ],
         "CheckAggs":[
             {
                 "AggPipeline":"CheckCountLoanStatus",
@@ -97,3 +150,9 @@ TransformMap={
         ]
     },
 }
+
+"""
+Temporarily removed to add in collweights for ex PL accounts
+
+
+"""

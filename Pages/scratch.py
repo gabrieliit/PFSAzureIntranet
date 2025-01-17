@@ -10,7 +10,7 @@ from azure.identity import ClientSecretCredential
 from azure.eventgrid import EventGridPublisherClient
 from azure.core.messaging import CloudEvent
 #import project modules
-from Layouts import styles
+from Pages import styles
 
 event_count=0
 #draw the scratchpage

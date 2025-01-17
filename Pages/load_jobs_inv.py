@@ -9,9 +9,9 @@ from bson import ObjectId
 import io
 from datetime import date
 #import project modules
-from Layouts import styles, shared_components as sc
+from Pages import styles, shared_components as sc
 from ProducerServices.Extract.source_metadata import ProducerSources
-from ConsumerServices.BuildDataset import create_dataset
+from ConsumerServices.DatasetTools import create_dataset
 
 def draw_page_content():
     layout = html.Div(

@@ -5,7 +5,7 @@ import dash
 import dash_core_components as dcc
 #import from other modules
 from CommonDataServices import mongo_store as mdb, data_utils as du
-from Layouts.Forms import forms_config
+from Pages.Forms import forms_config
 
 #set mongo db conn details
 db = mdb.mongo_client["PFS_MI"]
