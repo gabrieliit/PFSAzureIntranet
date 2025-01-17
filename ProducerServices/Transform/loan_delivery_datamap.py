@@ -1,29 +1,5 @@
 from ProducerServices.Transform import transform_utils
 TransformMap={
-    "Customers":
-    {
-        "OrderRank":0,
-        "Cardinality":"OnetoOne",
-        "MappingRules":
-        {                
-            "CustName":
-            {
-                "Source":"Attrib",
-                "AttribName":"Name"
-            },
-            "CustPhone":
-            {
-                "Source":"Attrib",
-                "AttribName":"Phone"
-            },
-            "LoanDates":
-            {
-                "Source":"Attrib",
-                "AttribName":"Date",
-            }
-        },
-        "UpsertFilters":["CustName","CustPhone"]
-    },
     "AccountNotings":
     {
         "OrderRank":1,
@@ -52,7 +28,17 @@ TransformMap={
                 "AttribName":["Int. Rec.","Princ. Rec."]
             }
         },
-        "UpsertFilters":["GLNo","NotingType","Date","Amount"]
+        "UpsertFilters":["GLNo","NotingType","Date","Amount"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccountNotings",
+                "AggResultsMap":
+                [
+                    {"Princ. Rec.":{"ID":{"NotingType":"PrincRec"},"AggField":"CheckSumAmount",}},
+                    {"Int. Rec.":{"ID":{"NotingType":"IntRec"},"AggField":"CheckSumAmount",}},
+                ]
+            }
+        ]
     },
     "Accounts":
     {
@@ -97,6 +83,16 @@ TransformMap={
                 "AttribName":"Weight"
             },
         },
-        "UpsertFilters":["GLNo","LoanAmount","LoanStartDate"]
+        "UpsertFilters":["GLNo"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccounts",
+                "AggResultsMap":
+                [
+                    {"Weight":{"ID":{},"AggField":"CheckSumWeight",}},
+                    {"Amt. Given":{"ID":{},"AggField":"CheckSumLoanAmount",}}
+                ]
+            },
+        ]
     }
 }

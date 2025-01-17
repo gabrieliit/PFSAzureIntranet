@@ -29,7 +29,11 @@ ProducerSources = {
             "Notice Date":"date-%d/%m/%Y",
             "Notes":str
         },
-        "DropRowsEnd":2,#Drop total rows and empty rows at the end    
+        "PreProcessOps":[
+            {"TrimCols":{"Cols":["Name"]}},
+            {"ToUpper":{"Cols":["Name"]}},
+        ],       
+        "DropRowsEnd":2,#Drop total rows and empty rows at the end
     },
     "LoanStatus":
     {
@@ -41,6 +45,10 @@ ProducerSources = {
         #"DerivedCols":["OverdueSince"],
         "Format":"xls",
         "DropRowsEnd":2,#Drop total rows and empty rows at the end
+        "PreProcessOps":[
+            {"TrimCols":{"Cols":["Name"]}},
+            {"ToUpper":{"Cols":["Name"]}},
+        ],  
     },
     "PendingLoan_30":
     {
@@ -70,7 +78,11 @@ ProducerSources = {
                         "Notice Type":str,
                         "Notice Date":"date-%d/%m/%Y",
                         "Notes":str
-                    },          
+                    },
+        "PreProcessOps":[
+            {"TrimCols":{"Cols":["Name"]}},
+            {"ToUpper":{"Cols":["Name"]}},
+        ],  
         "Format":"xls",
         "DropRowsEnd":2,#Drop total rows and empty rows at the end        
     },
@@ -104,15 +116,23 @@ ProducerSources = {
             "SplitMethod":"UseDelimiter",
             "DelimiterVal":"-",
             "KeepIndex":[0]
-        },   
-    },
-    "Merged_Receipt_PendingLoan":
-    {
-        "Merged": True,
-        "Description":"Merged Receipt and Pending Loans",
-        "Sources":["PendingLoan","Receipt"],
-        "MergeParams":{"MergeCols":["GLNo"],"MergeType":"left"},
-        "ColNames":["GLNo", "Name", "Phone", "TxnDate", "Principal", "Interest", "TotalAmt", "Type","InLoanInv"]
+        },
+        "PreProcessOps":[
+            {"TrimCols":{"Cols":["Name"]}},
+            {"ToUpper":{"Cols":["Name"]}},
+            {
+                "DerivedCols":
+                {                
+                    "Method":"SplitCol",
+                    "SourceCols":["GL. No. - GL Date"],
+                    "TargetCols":["GL. No.","GL Date"],
+                    "TargetDataTypes":[str,"date-%d/%m/%Y"],
+                    "SplitMethod":"UseDelimiter",
+                    "DelimiterVal":"-",
+                    "KeepIndex":[0]
+                },
+            }
+        ]
     },
     "LoanDelivery":
     {
@@ -121,7 +141,10 @@ ProducerSources = {
         "SkipRows":4,
         "DropRowsEnd":2,#Drop total rows and empty rows at the end
         "ColTypes":{"Date":"date-%d-%m-%Y","GL. No":str,"Name":str,"Phone":str,"Items":str,"Weight":float,"Amt. Given":float,"Princ. Rec.":str,"Int. Rec.":str},
-        "Format":"xls"
+        "Format":"xls",
+        "PreProcessOps":[
+            {"TrimCols":{"Cols":["Name"]}},
+            {"ToUpper":{"Cols":["Name"]}},
+        ],  
     }
-
 }

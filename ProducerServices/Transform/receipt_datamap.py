@@ -50,7 +50,17 @@ TransformMap={
                 "AttribName":"No. of Days"
             },
         },
-        "UpsertFilters":["GLNo","RecNo","TxnType","Date","Amount"]
+        "UpsertFilters":["GLNo","RecNo","TxnType","Date","Amount"],
+        "CheckAggs":[
+            {            
+                "AggPipeline":"CheckSumTxns",
+                "AggResultsMap":
+                [
+                    {"Prici. Rec":{"ID":{"TxnType":"PrincPayment"},"AggField":"ChecksumAmount",}},
+                    {"Int. Rec.":{"ID":{"TxnType":"IntPayment"},"AggField":"ChecksumAmount"}},
+                ]
+            }
+        ]
     },
     "Accounts":
     {
@@ -66,7 +76,7 @@ TransformMap={
             "LoanStatus":
             {
                 "Source":"Attrib",
-                "AttribName":"ST"
+                "AttribName":"ST",
             },
             "LoanStartDate":
             {
@@ -74,6 +84,16 @@ TransformMap={
                 "AttribName":"GL Date"
             }
         },
-        "UpsertFilters":["GLNo","LoanStartDate"]
+        "UpsertFilters":["GLNo"],
+        "IncludeCriteria":{"FilterType":"AttribVal","AttribName":"ST","IncludedVals":["CL"]},#only add/update records if the source value is in IncludedVals list
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckCountLoanStatus",
+                "AggResultsMap":
+                [
+                    {"ST":{"ID":{"LoanStatus":"CL"},"AggField":None,"FileRowFilters":{"ST":"CL"},"CompoundPK":["GL. No."]}},#AggField is None so only count will be checked (this is added by default to check agg op hnece not specified)
+                ]
+            }
+        ]
     },
 }

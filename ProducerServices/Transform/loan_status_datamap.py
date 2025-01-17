@@ -28,7 +28,17 @@ TransformMap={
                 "AttribName":["Interest Due","Princi. Due"]
             }
         },
-        "UpsertFilters":["GLNo","NotingType","Date","Amount"]
+        "UpsertFilters":["GLNo","NotingType","Date","Amount"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccountNotings",
+                "AggResultsMap":
+                [
+                    {"Princi. Due":{"ID":{"NotingType":"PrincDue"},"AggField":"CheckSumAmount",}},
+                    {"Interest Due":{"ID":{"NotingType":"IntDue"},"AggField":"CheckSumAmount",}},
+                ]
+            }
+        ]
     },
     "Accounts":
     {
@@ -57,6 +67,15 @@ TransformMap={
                 "AttribName":"Date"
             },
         },
-        "UpsertFilters":["GLNo","LoanAmount","LoanStartDate"]
+        "UpsertFilters":["GLNo"],
+        "CheckAggs":[
+            {
+                "AggPipeline":"CheckSumAccounts",
+                "AggResultsMap":
+                [
+                    {"Amt. Given":{"ID":{},"AggField":"CheckSumLoanAmount",}}
+                ]
+            },
+        ]
     }
 }
