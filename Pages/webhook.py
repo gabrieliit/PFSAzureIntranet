@@ -5,13 +5,13 @@ import dash_core_components as dcc
 from dash.dependencies import Input, Output
 # import required project modules
 #from Layouts import app_data
-from Layouts import homepage
+from Pages.Home import home_layout
 import flask
 import logging
 
 
 #Define layout (defined within a function in case it needs to be paramterised later to accept layout elements as params)
-page_layout = homepage.page_layout
+page_layout = home_layout.page_layout
 
 
 #Define the callbacks

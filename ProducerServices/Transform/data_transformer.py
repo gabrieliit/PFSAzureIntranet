@@ -6,8 +6,8 @@ from flask import session
 from datetime import datetime
 import math
 #import other modules
-from CommonDataServices import mongo_store, data_utils as du
-from ProducerServices.Transform import load_datamaps,transform_utils as tu
+from CommonDataServices import mongo_store, data_utils as du, transform_utils as tu
+from ProducerServices.Transform import load_datamaps
 from ProducerServices.Aggregations import aggs_map
 #what is the sourc
 
@@ -102,64 +102,98 @@ class DataTransformer():
                 rules=self.rules[target]["MappingRules"]
                 #process any conditional inclusion rules
                 try:
-                    incl_rule=self.rules[target]["IncludeCriteria"]
-                    if incl_rule["FilterType"]=="AttribVal":
-                        vals=incl_rule["IncludedVals"]
-                        attrib=incl_rule["AttribName"]
-                        add_record= True if row[attrib] in vals else False
+                    incl_rules=self.rules[target]["IncludeCriteria"]
+                    row_cond_vals=[]
+                    add_record=False
+                    for cond in incl_rules:
+                        if cond["CondType"]=="SourceValBasedInclusion":
+                            key_val=row[cond["KeyAttrib"]]
+                            param=cond["InclusionRule"]["Param"]
+                            cond_op=cond["InclusionRule"]["CondOp"]                                
+                        if cond_op=="Eq":cond_val=True if key_val==param else False
+                        elif cond_op=="Gt":cond_val=True if key_val>param else False
+                        row_cond_vals.append(cond_val)
+                        if cond_val==True:#OR each individual condition
+                            add_record=True
                 except:
                     add_record=True #no conditional inclusion criteria, process all records
                 if add_record:#process row if inclusion criteria not violated
                     for i in range(self.tgt_metadata[target]["n_col_to_rows"]):#insert n_col_to_rows docs into target collection for each source row
                         record={}
-                        for attrib,rule in rules.items():                       
-                            #process 1 to 1 mappings
-                            if rule["Source"][i]=="Attrib":
-                                try:
-                                    #check if the current attrib uses an alt defs
-                                    alt_attrib_map=rule["AltAttribMap"][i]
-                                    row_cond=alt_attrib_map[attrib]["Row_Filter"]
-                                    attr_cond=alt_attrib_map[attrib]["Attr_Filter"]
-                                    alt_type=alt_attrib_map[attrib]["AltType"]
-                                    cast_type=alt_attrib_map[attrib]["CastAltValToType"]
-                                    alt_val=alt_attrib_map[attrib]["AltVal"]
-                                    use_alt_def=tu.evaluate_condition(row,record,row_cond,attr_cond)
-                                    if use_alt_def:
-                                        if alt_type=="Constant":
-                                            record[attrib]=tu.get_constants(self,alt_val,cast_type)
-                                    else:
-                                        record[attrib]=row[rule["AttribName"][i]]#map value from the main col
-                                except:
-                                    #Attribute doesnt have alt defs, just pull the value from mapped column
-                                    record[attrib]=row[rule["AttribName"][i]]
-                            #process attribut mappings, ie where the column is filled with the same value 
-                            elif rule["Source"][i]=="Map":
-                                if type(rule["MapName"][i][rule["AttribName"][i]])==dict:
-                                    #the mapping has a further submap based on attribute value keys
-                                    sub_map=rule["MapName"][i][rule["AttribName"][i]]
+                        for attrib,rule in rules.items():   
+                            #check if there is a condition defined on the attrib
+                            try:
+                                attr_cond=rule["Condition"][i]
+                                incl_attr=None
+                                if attr_cond["CondType"]=="KeyBasedInclusion":
+                                    key_val=record[attr_cond["KeyAttrib"]]
+                                    param=attr_cond["InclusionRule"]["Param"]
+                                    cond_op=attr_cond["InclusionRule"]["CondOp"]
+                                elif attr_cond["CondType"]=="SourceKeyBasedInclusion":
+                                    key_val=row[attr_cond["KeyAttrib"]]
+                                    param=attr_cond["InclusionRule"]["Param"]
+                                    cond_op=attr_cond["InclusionRule"]["CondOp"]                                
+                                elif attr_cond["CondType"]=="SourceValBasedInclusion":
+                                    key_val=row[rule["AttribName"][i]]
+                                    param=attr_cond["InclusionRule"]["Param"]
+                                    cond_op=attr_cond["InclusionRule"]["CondOp"]
+                                elif attr_cond["CondType"]=="RowInclCond":
+                                    cond_id=attr_cond["CondIdx"]
+                                    incl_attr=row_cond_vals[cond_id]
+                                if incl_attr == None:
+                                    if cond_op=="Eq":incl_attr=True if key_val==param else False
+                                    elif cond_op=="Gt":incl_attr=True if key_val>param else False
+
+                            except KeyError: 
+                                incl_attr=True
+                            if incl_attr:#process attribute for the record if inclusion criteria for attribute is met                  
+                                #process 1 to 1 mappings
+                                if rule["Source"][i]=="Attrib":
                                     try:
-                                        record[attrib]=sub_map[row[rule["AttribName"][i]]]
-                                    except KeyError:
-                                        add_record=False #not a valid record as this value doesnt exist in submap, dont send to MongoDb
-                                else:
-                                    record[attrib]=rule["MapName"][i][rule["AttribName"][i]]
-                            
-                            #process conditional maps
-                            elif rule["Source"][i]=="ConditionalMap":
-                                key_col=rule["KeyAttrib"][i]
-                                try:
-                                    key_val=record[key_col]
-                                except KeyError as e:
-                                    add_record=False# not a valid record as the conditional key attribute doesnt exist
-                                val_type=rule["MapName"][i][key_val]["ValType"]
-                                val=rule["MapName"][i][key_val]["Val"]
-                                if val_type=="Constant":
-                                    record[attrib]=tu.get_constants(self,val)
-                                elif val_type=="SourceAttrib":
-                                    record[attrib]=row[val]
-                            #process COB Date mappings
-                            elif rule["Source"][i]=="COBDate":
-                                record[attrib]=pd.to_datetime(self.cob_date)
+                                        #check if the current attrib uses an alt defs
+                                        alt_attrib_map=rule["AltAttribMap"][i]
+                                        row_cond=alt_attrib_map[attrib]["Row_Filter"]
+                                        attr_cond=alt_attrib_map[attrib]["Attr_Filter"]
+                                        alt_type=alt_attrib_map[attrib]["AltType"]
+                                        cast_type=alt_attrib_map[attrib]["CastAltValToType"]
+                                        alt_val=alt_attrib_map[attrib]["AltVal"]
+                                        use_alt_def=tu.evaluate_condition(row,record,row_cond,attr_cond)
+                                        if use_alt_def:
+                                            if alt_type=="Constant":
+                                                record[attrib]=tu.get_constants(self,alt_val,cast_type)
+                                        else:
+                                            record[attrib]=row[rule["AttribName"][i]]#map value from the main col
+                                    except:
+                                        #Attribute doesnt have alt defs, just pull the value from mapped column
+                                        record[attrib]=row[rule["AttribName"][i]]
+                                #process attribut mappings, ie where the column is filled with the same value 
+                                elif rule["Source"][i]=="Map":
+                                    if type(rule["MapName"][i][rule["AttribName"][i]])==dict:
+                                        #the mapping has a further submap based on attribute value keys
+                                        sub_map=rule["MapName"][i][rule["AttribName"][i]]
+                                        try:
+                                            record[attrib]=sub_map[row[rule["AttribName"][i]]]
+                                        except KeyError:
+                                            add_record=False #not a valid record as this value doesnt exist in submap, dont send to MongoDb
+                                    else:
+                                        record[attrib]=rule["MapName"][i][rule["AttribName"][i]]
+                                
+                                #process conditional maps
+                                elif rule["Source"][i]=="ConditionalMap":
+                                    key_col=rule["KeyAttrib"][i]
+                                    try:
+                                        key_val=record[key_col]
+                                    except KeyError as e:
+                                        add_record=False# not a valid record as the conditional key attribute doesnt exist
+                                    val_type=rule["MapName"][i][key_val]["ValType"]
+                                    val=rule["MapName"][i][key_val]["Val"]
+                                    if val_type=="Constant":
+                                        record[attrib]=tu.get_constants(self,val)
+                                    elif val_type=="SourceAttrib":
+                                        record[attrib]=row[val]
+                                #process COB Date mappings
+                                elif rule["Source"][i]=="COBDate":
+                                    record[attrib]=pd.to_datetime(self.cob_date)
                         record["Source"]=self.source_filename
                         if add_record:
                             target_records[target].append(record)

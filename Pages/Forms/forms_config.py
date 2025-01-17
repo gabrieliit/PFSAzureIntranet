@@ -1,5 +1,5 @@
 import dash_bootstrap_components as dbc
-from Layouts.Forms import accounts_forms
+from Pages.Forms import accounts_forms
 def register_forms_callbacks(app):
     accounts_forms.register_callbacks(app)
 

@@ -4,7 +4,7 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import msal
 from flask import redirect, request, session
-import Layouts.index as index
+import Pages.index as index
 import logging
 
 """

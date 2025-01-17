@@ -20,3 +20,15 @@ def cast_dfcol_to_type(df_col,dtype):
     else:
         df_col=df_col.astype(dtype)
     return df_col
+
+def calc_business_days(start_date, end_date,weekends=["Sat","Sun"]): 
+    # Create a date range from start_date to end_date 
+    date_range = pd.date_range(start=start_date, end=end_date, freq='D') 
+    #map weekends array items to integers
+    day_to_int = { "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6 }
+    weekends=[day_to_int[day] for day in weekends]
+    # Filter out weekends
+    working_days = date_range[~date_range.weekday.isin(weekends)] 
+    # Count the number of working days 
+    num_business_days = len(working_days) 
+    return num_business_days

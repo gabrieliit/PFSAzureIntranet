@@ -1,7 +1,7 @@
 #import python packages
 import pandas as pd
 #import other modules
-from ConsumerServices.BuildDataset import dataset_rules as dr
+from ConsumerServices.DatasetTools import dataset_rules as dr
 from CommonDataServices import data_extractor as de
 
 class DatasetBuilder():
