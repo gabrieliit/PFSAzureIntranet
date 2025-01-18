@@ -205,7 +205,7 @@ def draw_summary_dashboard(rep_cob):
                             dbc.Row(
                                 [
                                     dbc.Col("Principal o/s",width=5),
-                                    dbc.Col(f'{locale.format("%d",pd_refact["TotalPrincOutstanding"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{locale.format_string("%d",pd_refact["TotalPrincOutstanding"][rep_cob.strftime("%d-%b-%Y")])}',width=3,className="text-end"),
                                     dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["YoY%"]}',width=2,className="text-end"),
                                     dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["QoQ%"]}',width=2,className="text-end")
                                 ]
@@ -213,7 +213,7 @@ def draw_summary_dashboard(rep_cob):
                             dbc.Row(
                                 [
                                     dbc.Col("Coll Weight",width=5),
-                                    dbc.Col(f'{locale.format("%d",pd_refact["TotalCollWeight"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{locale.format_string("%d",pd_refact["TotalCollWeight"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                     dbc.Col(f'{pd_refact["TotalCollWeight"]["YoY%"]}',width=2,className="text-end"),
                                     dbc.Col(f'{pd_refact["TotalCollWeight"]["QoQ%"]}',width=2,className="text-end")
                                 ]
