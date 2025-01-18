@@ -175,7 +175,10 @@ def calc_pagedata(rep_cob):
     return pd_refact
 
 def draw_summary_dashboard(rep_cob):
+    print("hi1")
     pd_refact=calc_pagedata(rep_cob)
+    print("hi2")
+    print(pd_refact.keys())
     return [
         html.Div(
             [ 
@@ -577,4 +580,5 @@ def register_callbacks(app):
         elif triggered_id=='home-dp-custom-cob-date':
             sel_cob=pd.to_datetime(cust_cob)
         h5_str=f"COB : {sel_cob.strftime('%d-%b-%Y')}"
+        print("hi0!")
         return draw_summary_dashboard(sel_cob),h5_str
