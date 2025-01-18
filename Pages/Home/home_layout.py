@@ -19,7 +19,7 @@ import Pages.Home.home_pagedata as hpd
 from ConsumerServices.DatasetTools import consumer_sources_metadata as csm
 from ConsumerServices.DatasetTools.DatasetDefs import ref_data
 
-#locale.setlocale(locale.LC_ALL,'en-IN')
+locale.setlocale(locale.LC_ALL,'en_US')
 event_count=0
 #Connection details
 hist_period=7
