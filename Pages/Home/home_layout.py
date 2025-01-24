@@ -19,7 +19,7 @@ import Pages.Home.home_pagedata as hpd
 from ConsumerServices.DatasetTools import consumer_sources_metadata as csm
 from ConsumerServices.DatasetTools.DatasetDefs import ref_data
 
-locale.setlocale(locale.LC_ALL,'en_IN')
+locale.setlocale(locale.LC_ALL,'en_US.utf8')
 event_count=0
 #Connection details
 hist_period=7
@@ -175,6 +175,7 @@ def calc_pagedata(rep_cob):
     return pd_refact
 
 def draw_summary_dashboard(rep_cob):
+    print("hi1")
     pd_refact=calc_pagedata(rep_cob)
     return [
         html.Div(
@@ -577,4 +578,5 @@ def register_callbacks(app):
         elif triggered_id=='home-dp-custom-cob-date':
             sel_cob=pd.to_datetime(cust_cob)
         h5_str=f"COB : {sel_cob.strftime('%d-%b-%Y')}"
+        print("hi0!")
         return draw_summary_dashboard(sel_cob),h5_str
