@@ -74,14 +74,12 @@ class DailyReceipts(agg.AggPipeBuilder):
                     },
                 }
             },#Sum up daily receipts
+            #project id field as Date, and drop _id field
             {
-                #project id field as Date, and drop _id field
-                {
-                    "$project": {
-                        "Date": "$_id",
-                        "_id": 0,
-                        "TotalOutflows": 1
-                    }
+                "$project": {
+                    "Date": "$_id",
+                    "_id": 0,
+                    "TotalReceipts": 1
                 }
             }            
         ]

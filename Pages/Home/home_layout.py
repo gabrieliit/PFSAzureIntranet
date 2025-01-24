@@ -19,7 +19,7 @@ import Pages.Home.home_pagedata as hpd
 from ConsumerServices.DatasetTools import consumer_sources_metadata as csm
 from ConsumerServices.DatasetTools.DatasetDefs import ref_data
 
-locale.setlocale(locale.LC_ALL,'en-IN')
+locale.setlocale(locale.LC_ALL,'en_IN')
 event_count=0
 #Connection details
 hist_period=7
@@ -201,7 +201,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Principal o/s",width=5),
-                                dbc.Col(f'{locale.format("%d",pd_refact["TotalPrincOutstanding"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%d",pd_refact["TotalPrincOutstanding"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["QoQ%"]}',width=2,className="text-end")
                             ]
@@ -209,7 +209,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Coll Weight",width=5),
-                                dbc.Col(f'{locale.format("%d",pd_refact["TotalCollWeight"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%d",pd_refact["TotalCollWeight"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalCollWeight"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalCollWeight"]["QoQ%"]}',width=2,className="text-end")
                             ]
@@ -217,7 +217,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Gold Price",width=5),
-                                dbc.Col(f'{locale.format("%d",pd_refact["GoldPrice"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%d",pd_refact["GoldPrice"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["GoldPrice"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["GoldPrice"]["QoQ%"]}',width=2,className="text-end")
                             ]
@@ -225,7 +225,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("New loans in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%d",pd_refact["NewLoansCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%d",pd_refact["NewLoansCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["NewLoansCount1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["NewLoansCount1Q"]["QoQ%"]}',width=2,className="text-end")                                
                             ]                                    
@@ -233,7 +233,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Closed loans in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%d",pd_refact["LoanClosuresCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%d",pd_refact["LoanClosuresCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["LoanClosuresCount1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["LoanClosuresCount1Q"]["QoQ%"]}',width=2,className="text-end")                                
                             ]                                    
@@ -241,7 +241,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Interest received in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["IntRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["IntRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["IntRec1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["IntRec1Q"]["QoQ%"]}',width=2,className="text-end")  
                             ]
@@ -249,7 +249,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Principal received in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["PrincRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["PrincRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["PrincRec1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["PrincRec1Q"]["QoQ%"]}',width=2,className="text-end")  
                             ]
@@ -257,7 +257,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Net cash outflow in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["NetCashOutflows1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["NetCashOutflows1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["NetCashOutflows1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["NetCashOutflows1Q"]["QoQ%"]}',width=2,className="text-end")  
                             ]
@@ -317,7 +317,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Avg new loan size in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["NewLoansAvgPrinc1QPL"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["NewLoansAvgPrinc1QPL"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["NewLoansAvgPrinc1QPL"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["NewLoansAvgPrinc1QPL"]["QoQ%"]}',width=2,className="text-end")    
                             ],
@@ -325,7 +325,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Avg cls loan size in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["LoanClosuresPrinc1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["LoanClosuresPrinc1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["LoanClosuresPrinc1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["LoanClosuresPrinc1Q"]["QoQ%"]}',width=2,className="text-end")    
                             ],
@@ -333,7 +333,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Avg cls loan coll wt in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["LoanClosuresCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["LoanClosuresCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["LoanClosuresCollWeight1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["LoanClosuresCollWeight1Q"]["QoQ%"]}',width=2,className="text-end")    
                             ],
@@ -341,7 +341,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Avg new coll wt in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["NewLoansCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["NewLoansCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["NewLoansCollWeight1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["NewLoansCollWeight1Q"]["QoQ%"]}',width=2,className="text-end")    
                             ],
@@ -349,7 +349,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("No of receipts/day in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["AvgReceiptCountPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AvgReceiptCountPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["AvgReceiptCountPerDay1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["AvgReceiptCountPerDay1Q"]["QoQ%"]}',width=2,className="text-end")  
                             ]
@@ -357,7 +357,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("New loans/day in Qtr",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["AvgNewLoansPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AvgNewLoansPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["AvgNewLoansPerDay1Q"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["AvgNewLoansPerDay1Q"]["QoQ%"]}',width=2,className="text-end")  
                             ]
@@ -378,7 +378,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Portfolio LTV",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["PortfolioLTV"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["PortfolioLTV"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["PortfolioLTV"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["PortfolioLTV"]["QoQ%"]}',width=2,className="text-end")
                             ]
@@ -386,7 +386,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("No of loans LTV > 75% ",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["AccountCount_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["AccountCount_LTVBreaches"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["AccountCount_LTVBreaches"]["QoQ%"]}',width=2,className="text-end")
                             ]
@@ -394,7 +394,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Princ O/S LTV > 75% ",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["TotalPrincOutstanding_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOutstanding_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOutstanding_LTVBreaches"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOutstanding_LTVBreaches"]["QoQ%"]}',width=2,className="text-end")
                             ]
@@ -402,7 +402,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Loans past due date",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["AccountCount_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["AccountCount_PastCls"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["AccountCount_PastCls"]["QoQ%"]}',width=2,className="text-end")
 
@@ -411,7 +411,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Princ o/s past loan due date",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["TotalPrincOS_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOS_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOS_PastCls"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOS_PastCls"]["QoQ%"]}',width=2,className="text-end")
 
@@ -420,7 +420,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Accounts with notices",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["AccountCount_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["AccountCount_Notices"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["AccountCount_Notices"]["QoQ%"]}',width=2,className="text-end")
                             ]
@@ -428,7 +428,7 @@ def draw_summary_dashboard(rep_cob):
                         dbc.Row(
                             [
                                 dbc.Col("Princ OS - notices",width=5),
-                                dbc.Col(f'{locale.format("%.2f",pd_refact["TotalPrincOS_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOS_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOS_Notices"]["YoY%"]}',width=2,className="text-end"),
                                 dbc.Col(f'{pd_refact["TotalPrincOS_Notices"]["QoQ%"]}',width=2,className="text-end")
                             ]

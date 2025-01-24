@@ -19,4 +19,5 @@ xlrd
 dash-bootstrap-components
 pymongo
 pydrive
+statsmodels
 

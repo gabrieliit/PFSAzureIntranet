@@ -916,14 +916,12 @@ class DailyOutflows(agg.AggPipeBuilder):
             },#Filter out all Loans disbursed between start and end date 
             {
                 #Add attrib LoanAmount_PLExPL, populated with LoanAmount attrib if it exists in the doc, else by sum of PrincPayments attribute
-                {
-                    "$addFields": {
-                        "LoanAmount_PLExPL": {
-                            "$cond": {
-                                "if": {"$gt":["$LoanAmount",0]} ,
-                                "then": "$LoanAmount",
-                                "else": {"$sum": "$PrincPaymentAmounts"}
-                            }
+                "$addFields": {
+                    "LoanAmount_PLExPL": {
+                        "$cond": {
+                            "if": {"$gt":["$LoanAmount",0]} ,
+                            "then": "$LoanAmount",
+                            "else": {"$sum": "$PrincPaymentAmounts"}
                         }
                     }
                 }
@@ -940,12 +938,10 @@ class DailyOutflows(agg.AggPipeBuilder):
             },#Sum up daily outflows
             {
                 #project id field as LoanStartDate, and drop _id field
-                {
-                    "$project": {
-                        "Date": "$_id",
-                        "_id": 0,
-                        "TotalOutflows": 1
-                    }
+                "$project": {
+                    "Date": "$_id",
+                    "_id": 0,
+                    "TotalOutflows": 1
                 }
             }
 
