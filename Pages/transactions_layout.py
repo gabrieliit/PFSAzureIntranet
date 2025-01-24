@@ -4,6 +4,8 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash
 from dash import Input, Output,State,callback_context
+import pandas as pd
+import plotly.express as px
 #import required project modules
 from Pages import styles,shared_components as sc
 from CommonDataServices import data_extractor as de
@@ -63,24 +65,27 @@ def draw_page_content(ext=[]):
             html.Div(
                 dbc.Row(
                     [
-                        dbc.Col(html.H6("Select Report",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue'}),width=1),
+                        html.H2("Custom Reports",style={'color':'blue'}),
+                        dbc.Col(html.H6("Select Report",style={'display': 'flex', 'justify-content': 'flex-end'}),width=1),
                         dbc.Col(dcc.Dropdown(id="transactions-dd-sel-rep",options=reports_list),width=3), 
                     ]  
                 )  
             ),
             html.Div(
                 [
-                    html.H2("Custom Reports",style={'color':'blue'}),
                     dbc.Row(
                         [
-                            dbc.Col(html.H6(id="transactions-lbl-param1",children="Param1",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue','visibility':'hidden'}),width=1),
-                            dbc.Col(dbc.Input(id="transactions-ip-param1"),width=1,style={'visibility':'hidden'}), 
-                            dbc.Col(html.H6(id="transactions-lbl-param2",children="Param2",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue','visibility':'hidden'}),width=1),
-                            dbc.Col(dbc.Input(id="transactions-ip-param2"),width=1,style={'visibility':'hidden'}),
-                            dbc.Col(html.H6(id="transactions-lbl-param3",children="Param3",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue','visibility':'hidden'}),width=1),
+                            html.H4("Populate report params",style={'color':'blue'}),
+                            dbc.Col(html.H6(id="transactions-lbl-param1",children="Param1",style={'display': 'flex', 'justify-content': 'flex-end','visibility':'hidden'}),width=1),
+                            dbc.Col(dbc.Input(id="transactions-ip-param1"),width=1,style={'visibility':'hidden'},className='custom-ph',), 
+                            dbc.Col(html.H6(id="transactions-lbl-param2",children="Param2",style={'display': 'flex', 'justify-content': 'flex-end','visibility':'hidden'}),width=1),
+                            dbc.Col(dbc.Input(id="transactions-ip-param2"),width=1,style={'visibility':'hidden'},className='custom-ph'),
+                            dbc.Col(html.H6(id="transactions-lbl-param3",children="Param3",style={'display': 'flex', 'justify-content': 'flex-end','visibility':'hidden'}),width=1),
                             dbc.Col(dbc.Input(id="transactions-ip-param3"),width=1,style={'visibility':'hidden'}), 
-                        ]  
-                    )  
+                        ],
+                        style={'display': 'flex', 'align-items': 'center'} 
+                    ),
+                    dbc.Row(dbc.Col(dbc.Button("Generate Report",id="transactions-btn-gen-report"),width=2)) 
                 ]
             ),
             html.Div(
@@ -139,6 +144,7 @@ def register_callbacks(app):
         Output("transactions-lbl-param1","children"),
         Output("transactions-lbl-param1","style"),
         Output("transactions-ip-param1","style"),
+        Output("transactions-ip-param1","placeholder"),
         Output("transactions-ip-param1","value"),
         Output("transactions-lbl-param2","children"),
         Output("transactions-lbl-param2","style"),
@@ -150,7 +156,6 @@ def register_callbacks(app):
         Output("transactions-ip-param3","style"),
         Output("transactions-ip-param3","placeholder"),
         Output("transactions-ip-param3","value"),        
-        Output("transactions-div-display-report","children"),
         Input("transactions-dd-sel-rep",'value'),
         State("transactions-lbl-param1","style"),
         State("transactions-ip-param1","style"),
@@ -192,24 +197,97 @@ def register_callbacks(app):
             elem_props[param["Name"]]["Label"]={}
             elem_props[param["Name"]]["Label"]["Children"]=param["Name"]
             lbl_style=locals()[f"lbl{i}_style"]
-            lbl_style["visibility"]="visible" if param_props[i]["Visible"] else "hidden"
+            lbl_style["visibility"]="visible" if param["Visible"] else "hidden"
             elem_props[param["Name"]]["Label"]["Style"]=lbl_style
             #populate input box props for the param    
             elem_props[param["Name"]]["IpBox"]={}
-            elem_props[param["Name"]]["IpBox"]["Children"]=param_props[i]["Name"]
-            lbl_style=locals()[f"ip{i}_style"]
-            lbl_style["visibility"]="visible" if param_props[i]["Visible"] else "hidden"
-            elem_props[param["Name"]]["IpBox"]["Style"]=lbl_style            
-            elem_props[param["Name"]]["IpBox"]["Placeholder"]=param_props[i]["Placeholder"]
-            elem_props[param["Name"]]["IpBox"]["Value"]=param_props[i]["Value"]
+            ip_style=locals()[f"ip{i}_style"]
+            if not ip_style:ip_style={}#set ip style to empty dict if no style params set for input box
+            ip_style["visibility"]="visible" if param["Visible"] else "hidden"
+            elem_props[param["Name"]]["IpBox"]["Style"]=ip_style            
+            elem_props[param["Name"]]["IpBox"]["Placeholder"]=param["Placeholder"]
+            elem_props[param["Name"]]["IpBox"]["Value"]=param["Value"]
         #prepare tuple containing element props to return from the callback
         props_list=[]
-        for i in range(len(REPORT_PARAMS[rep_name])):
+        params=REPORT_PARAMS[rep_name].keys()
+        for param in params:
             #first add the lbl props to the list for the param
-            for prop,val in elem_props[f"Param{i}"]["Label"]:
+            for prop,val in elem_props[param]["Label"].items():
                 props_list.append(val)
             #now add the input box props to the list for the param
-            for prop,val in elem_props[f"Param{i}"]["IpBox"]:
+            for prop,val in elem_props[param]["IpBox"].items():
                 props_list.append(val)
-        props_list.append(None)#clear any existing reports from the report display div
+        generate_custom_report(None,None,None,None,None)
         return props_list
+    
+    @app.callback(
+        Output("transactions-div-display-report","children"),
+        Input("transactions-btn-gen-report","n_clicks"),
+        State("transactions-dd-sel-rep",'value'),
+        State("transactions-ip-param1","value"),
+        State("transactions-ip-param2","value"),
+        State("transactions-ip-param3","value"),
+    )
+    def generate_custom_report(n_clicks,rep_name, param1,param2,param3):
+        if not rep_name:
+            return None
+        elif rep_name=="DailyNetCashOutflows":
+            #run aggregation in transactions_agg.py for DailyReciepts. param 1 is start date and param2 is end date for agg
+            start_date=pd.to_datetime(param1)
+            end_date=pd.to_datetime(param2)
+            #Daily receipts
+            source_obj=de.source_factory("Transactions",dataset_type="Consumer")
+            daily_receipts=source_obj.aggregate("DailyReceipts",None,agg_params={"StartDate":start_date,"EndDate":end_date})
+            #Daily outflows
+            source_obj=de.source_factory("Accounts",dataset_type="Consumer")
+            daily_outflows=source_obj.aggregate("DailyOutflows",None,agg_params={"StartDate":start_date,"EndDate":end_date})
+            # Merge the DataFrames on the 'date' field 
+            daily_cf = pd.merge(daily_outflows, daily_receipts, on='Date', how='outer')
+            daily_cf["NetOutflows"]=daily_cf["TotalOutflows"]-daily_cf["TotalReceipts"]
+            #create a plot of NetOutflows column of daily_cf
+            fig = px.line(daily_cf, x='Date', y='NetOutflows', title='Daily Net Cash Outflows')
+            #add a 5 day moving average plot to the graph
+            daily_cf["5DayMA"] = daily_cf["NetOutflows"].rolling(window=5).mean()
+            fig.add_scatter(x=daily_cf['Date'], y=daily_cf['5DayMA'], mode='lines', name='5 Day Moving Average')
+            #Add a toggle to the graph so i can toggle between 5day moving average, or net outflows
+            return html.Div([
+                dcc.RadioItems(
+                    id='toggle-line',
+                    options=[
+                        {'label': 'Net Outflows', 'value': 'NetOutflows'},
+                        {'label': '5 Day Moving Average', 'value': '5DayMA'},
+                        {'label': '30 Day Moving Average', 'value': '30DayMA'}
+                    ],
+                    value='NetOutflows',
+                    labelStyle={'display': 'inline-block'}
+                ),
+                dcc.Graph(id='line-graph', figure=fig)
+            ])
+
+    @app.callback(
+        Output('line-graph', 'figure'),
+        Input('toggle-line', 'value'),
+        State("transactions-dd-sel-rep",'value'),
+        State("transactions-ip-param1","value"),
+        State("transactions-ip-param2","value"),
+        State("transactions-ip-param3","value"),
+    )
+    def update_graph(selected_line, rep_name, param1, param2, param3):
+        if not rep_name:
+            return dash.no_update
+        elif rep_name == "DailyNetCashOutflows":
+            start_date = pd.to_datetime(param1, format='%d-%m-%Y')
+            end_date = pd.to_datetime(param2,format='%d-%m-%Y')
+            source_obj = de.source_factory("Transactions", dataset_type="Consumer")
+            daily_receipts = source_obj.aggregate("DailyReceipts", None, agg_params={"StartDate": start_date, "EndDate": end_date})
+            source_obj = de.source_factory("Accounts", dataset_type="Consumer")
+            daily_outflows = source_obj.aggregate("DailyOutflows", None, agg_params={"StartDate": start_date, "EndDate": end_date})
+            daily_cf = pd.merge(daily_outflows, daily_receipts, on='Date', how='outer')
+            daily_cf["NetOutflows"] = daily_cf["TotalOutflows"] - daily_cf["TotalReceipts"]
+            daily_cf["5DayMA"] = daily_cf["NetOutflows"].rolling(window=5).mean()
+            daily_cf["30DayMA"] = daily_cf["NetOutflows"].rolling(window=30).mean()
+            fig = px.line(daily_cf, x='Date', y=selected_line, title='Daily Net Cash Outflows')
+            #Add trend lines to the graphs
+            fig.add_traces(px.scatter(daily_cf, x='Date', y=selected_line, trendline="ols").data)
+            return fig
+

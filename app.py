@@ -12,8 +12,8 @@ from Pages import layouts_config
 from Pages.Forms import forms_config
 from Pages.index import register_callbacks,draw_page_outline
 
-#Test comment
-dash_obj = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+dash_obj = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP],suppress_callback_exceptions=True)
 app = dash_obj.server #default azure guincorn startup script target a variable called app to load webapp
 app.secret_key = os.urandom(24)
 register_callbacks(dash_obj)
