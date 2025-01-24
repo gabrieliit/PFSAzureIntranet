@@ -21,7 +21,7 @@ class DataTransformer():
         self.source_filename=self.source+"_"+cob_date
         self.tgt_metadata={}
         self.warnings=[]
-        skip_targets=[]#if some targets are already loaded previously and should not be processed again
+        skip_targets=["AccountNotings","Transactions"]#if some targets are already loaded previously and should not be processed again
         n_targets=len(list(self.rules.keys()))
         ordered_targets=np.empty(n_targets,dtype=object)
         self.db=mongo_store.mongo_client["PFS_MI"]
@@ -194,7 +194,7 @@ class DataTransformer():
                                 #process COB Date mappings
                                 elif rule["Source"][i]=="COBDate":
                                     record[attrib]=pd.to_datetime(self.cob_date)
-                        record["Source"]=self.source_filename
+                        #record["Source"]=self.source_filename
                         if add_record:
                             target_records[target].append(record)
                         add_record=True#reset flag for next record 

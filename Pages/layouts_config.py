@@ -1,4 +1,4 @@
-from Pages import scratch,user_auth_flow,index,dataloader,load_jobs_inv,accounts,customers,transactions
+from Pages import scratch, transactions_layout,user_auth_flow,index,dataloader,load_jobs_inv,accounts,customers
 from Pages.Home import home_layout
 def register_layout_callbacks(app):
     home_layout.register_callbacks(app)
@@ -8,7 +8,7 @@ def register_layout_callbacks(app):
     load_jobs_inv.register_callbacks(app)
     accounts.register_callbacks(app),
     customers.register_callbacks(app),
-    transactions.register_callbacks(app)
+    transactions_layout.register_callbacks(app)
 
 def validate_layouts():
     #return a list of all layouts for layout validation in the app
@@ -20,5 +20,5 @@ def validate_layouts():
         load_jobs_inv.draw_page_content(),
         accounts.draw_page_content(),
         customers.draw_page_content(),
-        transactions.draw_page_content(),        
+        transactions_layout.draw_page_content(),        
     ]

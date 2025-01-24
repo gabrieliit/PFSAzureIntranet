@@ -1,0 +1,7 @@
+/* Custom styles for placeholder text in dash dbc.Input boxes */
+.custom-ph::placeholder {
+    color: grey; /* Change to grey color */
+    opacity: 1; /* Ensure the color is applied */
+    font-style: italic; /* Optional: make the placeholder text italic */
+    font-size: 8px; /* Change to desired font size */
+}
