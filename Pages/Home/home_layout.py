@@ -486,24 +486,23 @@ def draw_page_content(ext=[],pd_refact={}):
             ),
             html.Div(
                 [                
-                    html.Div(
-                        dbc.Row(
-                            [
-                                dbc.Col(html.H5(id="home-h5-dashboard-cob",children=f"COB : ",style={'color':'blue'}),width=3),
-                                dbc.Col(html.H6("Pick/Enter custom COB (dd-mm-yyyy)",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue'}),width=3),
-                                dbc.Col(
-                                    dcc.DatePickerSingle(
-                                        id='home-dp-custom-cob-date',
-                                        display_format='DD-MM-YYYY',
-                                        style={"width":"200px"}
-                                    ),
-                                    width=1
+                    dbc.Row(
+                        [
+                            dbc.Col(html.H6(id="home-h5-dashboard-cob",children=f"Select COB : ",style={'color':'blue'}),width=3),
+                            dbc.Col(html.H6("Pick/Enter custom COB (dd-mm-yyyy)",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue'},),width=3),
+                            dbc.Col(
+                                dcc.DatePickerSingle(
+                                    id='home-dp-custom-cob-date',
+                                    display_format='DD-MM-YYYY',
+                                    style={"width":"200px"}
                                 ),
-                                dbc.Col(html.H6("Select reporting COB",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue'}),width=3),
-                                dbc.Col(dcc.Dropdown(id="home-dd-sel-rep-cob",options=dd_options),width=2),                      
-                            ]
-                        )
+                                width=1,
+                            ),
+                            dbc.Col(html.H6("Select reporting COB",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue'}),width=2),
+                            dbc.Col(dcc.Dropdown(id="home-dd-sel-rep-cob",options=dd_options),width=2),                      
+                        ]
                     ),
+                    dbc.Alert(id="home-alert-dash-prep-status",is_open=False,color='info'),
                     html.Div(id="home-div-summary-dash")
                 ],
                 style={'height': '100vh','width':'80vw', 'overflow': 'scroll'}        
@@ -563,20 +562,37 @@ def register_callbacks(app):
             return dash.no_update, False, dash.no_update
 
     @app.callback(
-        Output("home-div-summary-dash", "children"),
+        Output("home-alert-dash-prep-status", "children"),
+        Output("home-alert-dash-prep-status", "is_open"),
         Output("home-h5-dashboard-cob","children"),
         Input("home-dd-sel-rep-cob", "value"),
         Input('home-dp-custom-cob-date',"date"),
     )
-    def populate_summary_dashboard(rep_cob,cust_cob):
+    def read_rep_cob(rep_cob,cust_cob):
         ctx = callback_context
         triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
         if triggered_id=='':
             raise dash.exceptions.PreventUpdate
         elif triggered_id=="home-dd-sel-rep-cob" or triggered_id=='':
             sel_cob=pd.to_datetime(rep_cob)
+            alert_msg="Summary dashboard population in progress"
+            h5_str=f"Selected COB : {sel_cob.strftime('%d-%b-%Y')}"
         elif triggered_id=='home-dp-custom-cob-date':
-            sel_cob=pd.to_datetime(cust_cob)
-        h5_str=f"COB : {sel_cob.strftime('%d-%b-%Y')}"
-        print("hi0!")
-        return draw_summary_dashboard(sel_cob),h5_str
+            #sel_cob=pd.to_datetime(cust_cob)
+            h5_str="Selcted COB : None"
+            alert_msg="Custom date selection is currently disabled. Select reporting COB."
+        return alert_msg,True,h5_str
+
+    @app.callback(
+        Output("home-div-summary-dash", "children"),
+        Output("home-alert-dash-prep-status", "is_open",allow_duplicate=True),
+        Input("home-h5-dashboard-cob","children"),
+        prevent_initial_call='initial_duplicate'
+    )
+    def generate_summary_dashboard(sel_cob_msg):
+        #extract cob from "Selected COB : {sel_cob.strftime('%d-%b-%Y')}"
+        cob=sel_cob_msg.split(": ")[1]
+        if cob=='None': 
+            raise dash.exceptions.PreventUpdate
+        cob = pd.to_datetime(cob, format='%d-%b-%Y')
+        return draw_summary_dashboard(cob), False

@@ -73,6 +73,40 @@ TransformMap={
                 "Source":"Attrib",
                 "AttribName":"GL. No.",
             },
+            "CollWeight":
+            {
+                "Source":"Attrib",
+                "AttribName":"Weight",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add CollWeight in the record if the Loan Satus attribute =="CL"       
+            },
+            "LoanStartDate":
+            {
+                "Source":"Attrib",
+                "AttribName":"GL Date"
+            },
+
+            "LoanStatus":
+            {
+                "Source":"Attrib",
+                "AttribName":"ST",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"             
+            },            
+            "LoanClosureDate":
+            {
+                "Source":"Attrib",
+                "AttribName":"Rec. Dt",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"
+                "DependencyOrder":1
+            },
             "PrincPaymentAmounts":
             {
                 "Source":"Attrib",
@@ -120,38 +154,5 @@ TransformMap={
 
 """
 Temporarily removed 
-            "CollWeight":
-            {
-                "Source":"Attrib",
-                "AttribName":"Weight",
-                "Condition":{
-                    "CondType":"RowInclCond",
-                    "CondIdx":0,
-                },#only add CollWeight in the record if the Loan Satus attribute =="CL"       
-            },
-            "LoanStartDate":
-            {
-                "Source":"Attrib",
-                "AttribName":"GL Date"
-            },
 
-            "LoanStatus":
-            {
-                "Source":"Attrib",
-                "AttribName":"ST",
-                "Condition":{
-                    "CondType":"RowInclCond",
-                    "CondIdx":0,
-                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"             
-            },            
-            "LoanClosureDate":
-            {
-                "Source":"Attrib",
-                "AttribName":"Rec. Dt",
-                "Condition":{
-                    "CondType":"RowInclCond",
-                    "CondIdx":0,
-                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"
-                "DependencyOrder":1
-            },
 """
