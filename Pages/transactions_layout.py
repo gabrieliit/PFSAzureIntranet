@@ -15,7 +15,7 @@ REPORT_PARAMS={
     "DailyNetCashOutflows":{
         "StartDate":{"Placeholder":"dd-mm-yyyy"},
         "EndDate":{"Placeholder":"dd-mm-yyyy"},
-        "DeTrend":{"Value":"N"}
+        #"DeTrend":{"Value":"N"}
     }
 }
 
@@ -85,7 +85,8 @@ def draw_page_content(ext=[]):
                         ],
                         style={'display': 'flex', 'align-items': 'center'} 
                     ),
-                    dbc.Row(dbc.Col(dbc.Button("Generate Report",id="transactions-btn-gen-report"),width=2)) 
+                    dbc.Row(dbc.Col(dbc.Button("Generate Report",id="transactions-btn-gen-report"),width=2)),
+                    dbc.Alert(id="transactions-alert-rep-gen-status-msg",is_open=False,color='info') 
                 ]
             ),
             html.Div(
@@ -208,8 +209,9 @@ def register_callbacks(app):
             elem_props[param["Name"]]["IpBox"]["Placeholder"]=param["Placeholder"]
             elem_props[param["Name"]]["IpBox"]["Value"]=param["Value"]
         #prepare tuple containing element props to return from the callback
-        props_list=[]
         params=REPORT_PARAMS[rep_name].keys()
+        props_list=[]
+        #set props required for report params in props list
         for param in params:
             #first add the lbl props to the list for the param
             for prop,val in elem_props[param]["Label"].items():
@@ -217,20 +219,36 @@ def register_callbacks(app):
             #now add the input box props to the list for the param
             for prop,val in elem_props[param]["IpBox"].items():
                 props_list.append(val)
+        #set props to dash.no_update for params not required for the report so they remain hidden
+        n_hidden_elements=(3-len(params))*5
+        props_list+=[dash.no_update]*n_hidden_elements
         generate_custom_report(None,None,None,None,None)
         return props_list
     
     @app.callback(
-        Output("transactions-div-display-report","children"),
+        Output("transactions-alert-rep-gen-status-msg","children"),
+        Output("transactions-alert-rep-gen-status-msg","is_open"),
         Input("transactions-btn-gen-report","n_clicks"),
+    )
+    def update_rep_gen_msg(n_clicks):
+        if n_clicks:
+            return "Report generation in progress",True
+        else:
+            raise dash.exceptions.PreventUpdate
+    
+    @app.callback(
+        Output("transactions-div-display-report","children"),
+        Output("transactions-alert-rep-gen-status-msg","is_open",allow_duplicate=True),
+        Input("transactions-alert-rep-gen-status-msg","children"),
         State("transactions-dd-sel-rep",'value'),
         State("transactions-ip-param1","value"),
         State("transactions-ip-param2","value"),
         State("transactions-ip-param3","value"),
-    )
-    def generate_custom_report(n_clicks,rep_name, param1,param2,param3):
+        prevent_initial_call='initial_duplicate'
+    )    
+    def generate_custom_report(msg,rep_name, param1,param2,param3):
         if not rep_name:
-            return None
+            return None, None
         elif rep_name=="DailyNetCashOutflows":
             #run aggregation in transactions_agg.py for DailyReciepts. param 1 is start date and param2 is end date for agg
             start_date=pd.to_datetime(param1)
@@ -262,7 +280,7 @@ def register_callbacks(app):
                     labelStyle={'display': 'inline-block'}
                 ),
                 dcc.Graph(id='line-graph', figure=fig)
-            ])
+            ]),False
 
     @app.callback(
         Output('line-graph', 'figure'),
