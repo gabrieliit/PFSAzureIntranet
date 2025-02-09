@@ -17,7 +17,7 @@ from CommonDataServices import mongo_store as mdb, data_utils as du, data_extrac
 from Pages.Forms import accounts_forms
 import Pages.Home.home_pagedata as hpd
 from ConsumerServices.DatasetTools import consumer_sources_metadata as csm
-from ConsumerServices.DatasetTools.DatasetDefs import ref_data
+from ConsumerServices.DatasetTools.DatasetDefs import gold_prices
 
 locale.setlocale(locale.LC_ALL,os.getenv("LOCALE_PFSINTRANET"))
 event_count=0
@@ -39,6 +39,40 @@ def calc_pagedata(rep_cob):
     page_data["QoQ%"]={}
     qoq_cob=rep_cob-rd(months=3)
     yoy_cob=rep_cob-rd(years=1)
+    all_params_resolved=True#set a flag to signal some params failed to resolve in the routine
+    unresolved_params=[]#list of unresolved params
+    #ref data
+    for fact_def in hpd.ref_data_facts:
+        page_data["RefData"]={}
+        for cob in fact_def["AsofDate"]:
+            rep_cob_delta=cob["Delta"]
+            as_of_date=rep_cob+rep_cob_delta
+            if fact_def["Source"]=="GoldPrices":
+                res=gold_prices.get_gold_price(as_of_date)
+                if res["APIResponse"]:#Gold price was not found in MDB. An API call was made - check status of API call
+                    if res["APIResponse"]["Status"]=="Failed":
+                        unres_param={
+                            "Param":fact_def["FactName"],
+                            "AsofDate":as_of_date,
+                        }
+                        unresolved_params.append(unres_param)
+                        all_params_resolved=False
+            try:
+                page_data["RefData"][as_of_date.strftime("%d-%b-%Y")][fact_def["FactName"]]=res["Results"][0]["Value"]
+            except KeyError:
+                page_data["RefData"][as_of_date.strftime("%d-%b-%Y")]={}#initiate the cob dict
+                page_data["RefData"][as_of_date.strftime("%d-%b-%Y")][fact_def["FactName"]]=res["Results"][0]["Value"]
+    if not all_params_resolved:#exit routine if all params have not been resolved
+        result= {
+            "Status":"Failed",
+            "ReasonCode":"UnresParams",
+            "Msg":"Some params could not be resolved",
+            "Details":unresolved_params,
+            "Results":None
+        }
+        return result
+
+    #get agg pipe outputs
     for source,agg_list in hpd.agg_pipe_outputs.items():
         for agg_rule in agg_list:
             pipe=agg_rule["PipeName"]
@@ -55,7 +89,8 @@ def calc_pagedata(rep_cob):
                 param_dict={}
                 if params:
                     for param in params:
-                        param_val=hpd.get_fact(param["ParamDef"],{"AsofDate":as_of_date},fact_coll=page_data)
+                        res=hpd.get_fact(param["ParamDef"],{"AsofDate":as_of_date},fact_coll=page_data)
+                        param_val=res["Value"]
                         param_name=param["ParamName"]
                         if type(param_val)!=dict:
                             param_dict.update({param_name:param_val})
@@ -64,29 +99,19 @@ def calc_pagedata(rep_cob):
                 else:
                     param_dict={}
                 page_data[pipe][as_of_date.strftime("%d-%b-%Y")]={}
-                agg_results=source_obj.aggregate(pipe,as_of_date,param_dict)
-                for fact,fact_procs in agg_rule["Facts"].items():
-                    col=fact_procs["OutputCol"]
-                    if not fact_procs["Dim"]:
-                        res=0.0 if agg_results.empty else agg_results[col][0]
-                    else: #if fact has a dimension, read from the dimension row of the agg_Results df
-                        res=0.0 if agg_results.empty else agg_results[agg_results['_id']==fact_procs["Dim"]][col].values[0]
-                    for pp,rule in fact_procs["PostProcs"].items(): 
-                        if pp=="FormatDateString": res=res.strftime(rule)
-                    page_data[pipe][as_of_date.strftime("%d-%b-%Y")][fact]=res
-    #ref data
-    for fact_def in hpd.ref_data_facts:
-        page_data["RefData"]={}
-        for cob in fact_def["AsofDate"]:
-            rep_cob_delta=cob["Delta"]
-            as_of_date=rep_cob+rep_cob_delta
-            if fact_def["Source"]=="GoldPrices":
-                res=ref_data.get_gold_price(as_of_date)["Results"][0]["Value"]
-            try:
-                page_data["RefData"][as_of_date.strftime("%d-%b-%Y")][fact_def["FactName"]]=res
-            except KeyError:
-                page_data["RefData"][as_of_date.strftime("%d-%b-%Y")]={}#initiate the cob dict
-                page_data["RefData"][as_of_date.strftime("%d-%b-%Y")][fact_def["FactName"]]=res
+                if all_params_resolved:
+                    agg_results=source_obj.aggregate(pipe,as_of_date,param_dict)
+                    for fact,fact_procs in agg_rule["Facts"].items():
+                        col=fact_procs["OutputCol"]
+                        if not fact_procs["Dim"]:
+                            res=0.0 if agg_results.empty else agg_results[col][0]
+                        else: #if fact has a dimension, read from the dimension row of the agg_Results df
+                            res=0.0 if agg_results.empty else agg_results[agg_results['_id']==fact_procs["Dim"]][col].values[0]
+                        for pp,rule in fact_procs["PostProcs"].items(): 
+                            if pp=="FormatDateString": res=res.strftime(rule)
+                        page_data[pipe][as_of_date.strftime("%d-%b-%Y")][fact]=res
+
+    #
     #post procs
     for level, facts in hpd.post_procs.items():    
         for calc_def in facts:
@@ -138,8 +163,8 @@ def calc_pagedata(rep_cob):
                     calc_val=0.0
                     for term in calc_def["Terms"]:
                         if term["Op"]=="Div":
-                            num=hpd.get_fact(term["Num"],{"AsofDate":cob},fact_coll=page_data)
-                            denom=hpd.get_fact(term["Denom"],{"AsofDate":cob},fact_coll=page_data)
+                            num=hpd.get_fact(term["Num"],{"AsofDate":cob},fact_coll=page_data)["Value"]
+                            denom=hpd.get_fact(term["Denom"],{"AsofDate":cob},fact_coll=page_data)["Value"]
                             term["Value"]=num/denom
                         calc_val+=term["Value"]
                     cob_str=cob.strftime("%d-%b-%Y")
@@ -172,274 +197,286 @@ def calc_pagedata(rep_cob):
             vals["QoQ%"]=f'{vals[rep_cob.strftime("%d-%b-%Y")]/vals[qoq_cob.strftime("%d-%b-%Y")]-1:.2%}'
         except ZeroDivisionError as e:
             vals["QoQ%"]="NA"
-    return pd_refact
+    result= {
+            "Status":"Success",
+            "ReasonCode":"NA",
+            "Msg":"All page facts calculated",
+            "Details":None,
+            "Results":pd_refact
+        }
+    return result
 
 def draw_summary_dashboard(rep_cob):
-    print("hi1")
-    pd_refact=calc_pagedata(rep_cob)
-    return [
-        html.Div(
-            [ 
-                html.Div(
-                    [
-                        html.H3("Portfolio Metrics",style={'color':'blue'}),
-                        dbc.Row(
-                            [
-                                dbc.Col(html.H5("Metric"),width=5),
-                                dbc.Col(html.H5("Value"),width=3,className="text-end"),
-                                dbc.Col(html.H5("YoY%"),width=2),
-                                dbc.Col(html.H5("QoQ%"),width=2),
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("No of Loans",width=5),
-                                dbc.Col(f'{pd_refact["TotalAccounts"][rep_cob.strftime("%d-%b-%Y")]}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalAccounts"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalAccounts"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Principal o/s",width=5),
-                                dbc.Col(f'{locale.format_string("%d",pd_refact["TotalPrincOutstanding"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Coll Weight",width=5),
-                                dbc.Col(f'{locale.format_string("%d",pd_refact["TotalCollWeight"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalCollWeight"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalCollWeight"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Gold Price",width=5),
-                                dbc.Col(f'{locale.format_string("%d",pd_refact["GoldPrice"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["GoldPrice"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["GoldPrice"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),                        
-                        dbc.Row(
-                            [
-                                dbc.Col("New loans in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%d",pd_refact["NewLoansCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["NewLoansCount1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["NewLoansCount1Q"]["QoQ%"]}',width=2,className="text-end")                                
-                            ]                                    
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Closed loans in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%d",pd_refact["LoanClosuresCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["LoanClosuresCount1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["LoanClosuresCount1Q"]["QoQ%"]}',width=2,className="text-end")                                
-                            ]                                    
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Interest received in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["IntRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["IntRec1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["IntRec1Q"]["QoQ%"]}',width=2,className="text-end")  
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Principal received in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["PrincRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["PrincRec1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["PrincRec1Q"]["QoQ%"]}',width=2,className="text-end")  
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Net cash outflow in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["NetCashOutflows1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["NetCashOutflows1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["NetCashOutflows1Q"]["QoQ%"]}',width=2,className="text-end")  
-                            ]
-                        ),                             
-                    ],
-                    style={'border': '1px solid grey', 'padding': '10px','height': '100%', 'width':'50%','overflowY': 'auto'},
-                ), 
-                html.Div(
-                    [
-                        html.H3("Customers",style={'color':'blue'}),
-                        dbc.Row(
-                            [
-                                dbc.Col(html.H5("Metric"),width=5),
-                                dbc.Col(html.H5("Value"),width=3,className="text-end"),
-                                dbc.Col(html.H5("YoY%"),width=2),
-                                dbc.Col(html.H5("QoQ%"),width=2),
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("No of Active Customers",width=6)
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("New Customers acquired in Qtr",width=6)
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("No of inactive customers",width=6)
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Avg no of loans per customer",width=6)
-                            ]
-                        ),          
-                    ], 
-                    style={'border': '1px solid grey', 'padding': '10px','height': '100%', 'width':'50%','overflowY': 'auto'}) 
-            ], 
-            style={'display': 'flex', 'height': '40vh', 'width':'64rem'}
-        ), 
-        html.Div(
-            [ 
-                html.Div(
-                    [
-                        html.H3("Transaction Metrics",style={'color':'blue'}),
-                        dbc.Row(
-                            [
-                                dbc.Col(html.H5("Metric"),width=5),
-                                dbc.Col(html.H5("Value"),width=3,className="text-end"),
-                                dbc.Col(html.H5("YoY%"),width=2),
-                                dbc.Col(html.H5("QoQ%"),width=2),
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Avg new loan size in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["NewLoansAvgPrinc1QPL"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["NewLoansAvgPrinc1QPL"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["NewLoansAvgPrinc1QPL"]["QoQ%"]}',width=2,className="text-end")    
-                            ],
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Avg cls loan size in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["LoanClosuresPrinc1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["LoanClosuresPrinc1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["LoanClosuresPrinc1Q"]["QoQ%"]}',width=2,className="text-end")    
-                            ],
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Avg cls loan coll wt in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["LoanClosuresCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["LoanClosuresCollWeight1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["LoanClosuresCollWeight1Q"]["QoQ%"]}',width=2,className="text-end")    
-                            ],
-                        ),    
-                        dbc.Row(
-                            [
-                                dbc.Col("Avg new coll wt in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["NewLoansCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["NewLoansCollWeight1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["NewLoansCollWeight1Q"]["QoQ%"]}',width=2,className="text-end")    
-                            ],
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("No of receipts/day in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AvgReceiptCountPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["AvgReceiptCountPerDay1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["AvgReceiptCountPerDay1Q"]["QoQ%"]}',width=2,className="text-end")  
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("New loans/day in Qtr",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AvgNewLoansPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["AvgNewLoansPerDay1Q"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["AvgNewLoansPerDay1Q"]["QoQ%"]}',width=2,className="text-end")  
-                            ]
-                        ),
-                    ], 
-                    style={'border': '1px solid grey', 'padding': '10px','height': '100%','width':'50%','overflowY': 'auto'}), 
-                html.Div(
-                    [
-                        html.H3("Risk Metrics",style={'color':'blue'}),
-                        dbc.Row(
-                            [
-                                dbc.Col(html.H5("Metric"),width=5),
-                                dbc.Col(html.H5("Value"),width=3,className="text-end"),
-                                dbc.Col(html.H5("YoY%"),width=2),
-                                dbc.Col(html.H5("QoQ%"),width=2),
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Portfolio LTV",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["PortfolioLTV"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["PortfolioLTV"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["PortfolioLTV"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("No of loans LTV > 75% ",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["AccountCount_LTVBreaches"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["AccountCount_LTVBreaches"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Princ O/S LTV > 75% ",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOutstanding_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOutstanding_LTVBreaches"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOutstanding_LTVBreaches"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col("Loans past due date",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["AccountCount_PastCls"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["AccountCount_PastCls"]["QoQ%"]}',width=2,className="text-end")
+    calc_results=calc_pagedata(rep_cob)
+    if calc_results["Status"]=="Failed":
+        msg=f"The following params were unresolved {calc_results['Details']}."
+        children=[dbc.Alert(msg,color="danger")]
+    else:
+        pd_refact=calc_results["Results"]
+        children= [
+            html.Div(
+                [ 
+                    html.Div(
+                        [
+                            html.H3("Portfolio Metrics",style={'color':'blue'}),
+                            dbc.Row(
+                                [
+                                    dbc.Col(html.H5("Metric"),width=5),
+                                    dbc.Col(html.H5("Value"),width=3,className="text-end"),
+                                    dbc.Col(html.H5("YoY%"),width=2),
+                                    dbc.Col(html.H5("QoQ%"),width=2),
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("No of Loans",width=5),
+                                    dbc.Col(f'{pd_refact["TotalAccounts"][rep_cob.strftime("%d-%b-%Y")]}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalAccounts"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalAccounts"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Principal o/s",width=5),
+                                    dbc.Col(f'{locale.format_string("%d",pd_refact["TotalPrincOutstanding"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOutstanding"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Coll Weight",width=5),
+                                    dbc.Col(f'{locale.format_string("%d",pd_refact["TotalCollWeight"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalCollWeight"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalCollWeight"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Gold Price",width=5),
+                                    dbc.Col(f'{locale.format_string("%d",pd_refact["GoldPrice"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["GoldPrice"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["GoldPrice"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),                        
+                            dbc.Row(
+                                [
+                                    dbc.Col("New loans in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%d",pd_refact["NewLoansCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NewLoansCount1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NewLoansCount1Q"]["QoQ%"]}',width=2,className="text-end")                                
+                                ]                                    
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Closed loans in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%d",pd_refact["LoanClosuresCount1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["LoanClosuresCount1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["LoanClosuresCount1Q"]["QoQ%"]}',width=2,className="text-end")                                
+                                ]                                    
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Interest received in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["IntRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["IntRec1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["IntRec1Q"]["QoQ%"]}',width=2,className="text-end")  
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Principal received in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["PrincRec1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["PrincRec1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["PrincRec1Q"]["QoQ%"]}',width=2,className="text-end")  
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Net cash outflow in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["NetCashOutflows1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NetCashOutflows1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NetCashOutflows1Q"]["QoQ%"]}',width=2,className="text-end")  
+                                ]
+                            ),                             
+                        ],
+                        style={'border': '1px solid grey', 'padding': '10px','height': '100%', 'width':'50%','overflowY': 'auto'},
+                    ), 
+                    html.Div(
+                        [
+                            html.H3("Customers",style={'color':'blue'}),
+                            dbc.Row(
+                                [
+                                    dbc.Col(html.H5("Metric"),width=5),
+                                    dbc.Col(html.H5("Value"),width=3,className="text-end"),
+                                    dbc.Col(html.H5("YoY%"),width=2),
+                                    dbc.Col(html.H5("QoQ%"),width=2),
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("No of Active Customers",width=6)
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("New Customers acquired in Qtr",width=6)
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("No of inactive customers",width=6)
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Avg no of loans per customer",width=6)
+                                ]
+                            ),          
+                        ], 
+                        style={'border': '1px solid grey', 'padding': '10px','height': '100%', 'width':'50%','overflowY': 'auto'}) 
+                ], 
+                style={'display': 'flex', 'height': '40vh', 'width':'64rem'}
+            ), 
+            html.Div(
+                [ 
+                    html.Div(
+                        [
+                            html.H3("Transaction Metrics",style={'color':'blue'}),
+                            dbc.Row(
+                                [
+                                    dbc.Col(html.H5("Metric"),width=5),
+                                    dbc.Col(html.H5("Value"),width=3,className="text-end"),
+                                    dbc.Col(html.H5("YoY%"),width=2),
+                                    dbc.Col(html.H5("QoQ%"),width=2),
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Avg new loan size in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["NewLoansAvgPrinc1QPL"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NewLoansAvgPrinc1QPL"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NewLoansAvgPrinc1QPL"]["QoQ%"]}',width=2,className="text-end")    
+                                ],
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Avg cls loan size in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["LoanClosuresPrinc1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["LoanClosuresPrinc1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["LoanClosuresPrinc1Q"]["QoQ%"]}',width=2,className="text-end")    
+                                ],
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Avg cls loan coll wt in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["LoanClosuresCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["LoanClosuresCollWeight1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["LoanClosuresCollWeight1Q"]["QoQ%"]}',width=2,className="text-end")    
+                                ],
+                            ),    
+                            dbc.Row(
+                                [
+                                    dbc.Col("Avg new coll wt in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["NewLoansCollWeight1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NewLoansCollWeight1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["NewLoansCollWeight1Q"]["QoQ%"]}',width=2,className="text-end")    
+                                ],
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("No of receipts/day in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["AvgReceiptCountPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AvgReceiptCountPerDay1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AvgReceiptCountPerDay1Q"]["QoQ%"]}',width=2,className="text-end")  
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("New loans/day in Qtr",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["AvgNewLoansPerDay1Q"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AvgNewLoansPerDay1Q"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AvgNewLoansPerDay1Q"]["QoQ%"]}',width=2,className="text-end")  
+                                ]
+                            ),
+                        ], 
+                        style={'border': '1px solid grey', 'padding': '10px','height': '100%','width':'50%','overflowY': 'auto'}), 
+                    html.Div(
+                        [
+                            html.H3("Risk Metrics",style={'color':'blue'}),
+                            dbc.Row(
+                                [
+                                    dbc.Col(html.H5("Metric"),width=5),
+                                    dbc.Col(html.H5("Value"),width=3,className="text-end"),
+                                    dbc.Col(html.H5("YoY%"),width=2),
+                                    dbc.Col(html.H5("QoQ%"),width=2),
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Portfolio LTV",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["PortfolioLTV"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["PortfolioLTV"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["PortfolioLTV"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("No of loans LTV > 75% ",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AccountCount_LTVBreaches"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AccountCount_LTVBreaches"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Princ O/S LTV > 75% ",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOutstanding_LTVBreaches"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOutstanding_LTVBreaches"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOutstanding_LTVBreaches"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col("Loans past due date",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AccountCount_PastCls"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AccountCount_PastCls"]["QoQ%"]}',width=2,className="text-end")
 
-                            ]
-                        ), 
-                        dbc.Row(
-                            [
-                                dbc.Col("Princ o/s past loan due date",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOS_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOS_PastCls"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOS_PastCls"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ), 
+                            dbc.Row(
+                                [
+                                    dbc.Col("Princ o/s past loan due date",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOS_PastCls"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOS_PastCls"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOS_PastCls"]["QoQ%"]}',width=2,className="text-end")
 
-                            ]
-                        ), 
-                        dbc.Row(
-                            [
-                                dbc.Col("Accounts with notices",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["AccountCount_Notices"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["AccountCount_Notices"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),                                   
-                        dbc.Row(
-                            [
-                                dbc.Col("Princ OS - notices",width=5),
-                                dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOS_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOS_Notices"]["YoY%"]}',width=2,className="text-end"),
-                                dbc.Col(f'{pd_refact["TotalPrincOS_Notices"]["QoQ%"]}',width=2,className="text-end")
-                            ]
-                        ),
-                    ], 
-                    style={'border': '1px solid grey', 'padding': '10px','height': '100%','width':'50%','overflowY': 'auto'}) 
-            ], 
-            style={'display': 'flex', 'height': '40vh','width':'64rem'}
-        )
-    ]
+                                ]
+                            ), 
+                            dbc.Row(
+                                [
+                                    dbc.Col("Accounts with notices",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["AccountCount_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AccountCount_Notices"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["AccountCount_Notices"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),                                   
+                            dbc.Row(
+                                [
+                                    dbc.Col("Princ OS - notices",width=5),
+                                    dbc.Col(f'{locale.format_string("%.2f",pd_refact["TotalPrincOS_Notices"][rep_cob.strftime("%d-%b-%Y")],grouping=True)}',width=3,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOS_Notices"]["YoY%"]}',width=2,className="text-end"),
+                                    dbc.Col(f'{pd_refact["TotalPrincOS_Notices"]["QoQ%"]}',width=2,className="text-end")
+                                ]
+                            ),
+                        ], 
+                        style={'border': '1px solid grey', 'padding': '10px','height': '100%','width':'50%','overflowY': 'auto'}) 
+                ], 
+                style={'display': 'flex', 'height': '40vh','width':'64rem'}
+            )
+        ]
+    return children
 #draw the homepage
 def draw_page_content(ext=[],pd_refact={}):
     #define hompage content
@@ -575,12 +612,11 @@ def register_callbacks(app):
             raise dash.exceptions.PreventUpdate
         elif triggered_id=="home-dd-sel-rep-cob" or triggered_id=='':
             sel_cob=pd.to_datetime(rep_cob)
-            alert_msg="Summary dashboard population in progress"
-            h5_str=f"Selected COB : {sel_cob.strftime('%d-%b-%Y')}"
         elif triggered_id=='home-dp-custom-cob-date':
             #sel_cob=pd.to_datetime(cust_cob)
-            h5_str="Selcted COB : None"
-            alert_msg="Custom date selection is currently disabled. Select reporting COB."
+            sel_cob=pd.to_datetime(cust_cob)
+        alert_msg="Summary dashboard population in progress"
+        h5_str=f"Selected COB : {sel_cob.strftime('%d-%b-%Y')}"
         return alert_msg,True,h5_str
 
     @app.callback(

@@ -5,6 +5,7 @@ import importlib
 import requests
 from pymongo.errors import WriteError
 from CommonDataServices import data_queries as dq, data_utils as du,mongo_store, transform_utils as tu
+import json
 
 class DataSource_Old(): # this should be inherited from DataSource
     def __init__(self,source,df):    
@@ -95,7 +96,7 @@ class MDB_Collection(DataSource):
     def find(self,filter={}, columns={},dtype="native",ret_type='df'):
         cursor=self.db[self.source].find(filter,projection=columns)
         results=self.format_results(cursor,ret_type,dtype)
-        status="Success" if len(results)>0 else "NotFound"
+        status="Success" if len(results)>0 else "Failed"
         results={"Results":results,"Params":filter,"Status":status,"Message":"Query successful"}
         return results
     
@@ -128,10 +129,12 @@ class API(DataSource):
         url_obj=self.generate_url(filter,columns)
         if url_obj["Status"]=="Success":
             response = requests.get(url_obj["URL"])
-            if response.status_code == 200:
+            response_text=json.loads(response.text)
+            if response_text["success"]:
                 results={"Results":self.format_results(response.json()),"Params":filter,"Status":"Success","Message":"API call successful","HTTPStatusCode":response.status_code}
             else:
-                results ={"Results":None,"Status":"Failed","Message":"API call failed","HTTPStatusCode":response.status_code} #return empty df if API call fails
+                error_dict=response_text["error"]
+                results ={"Results":None,"Status":"Failed","Message":f"API call failed.{error_dict['message']}","HTTPStatusCode":error_dict["statusCode"]} #return empty df if API call fails
         else:
             results ={"Results":None,"Status":"Failed","Message":url_obj["Message"],"HTTPStatusCode":None} #return empty df if URL generation fails
         return results
