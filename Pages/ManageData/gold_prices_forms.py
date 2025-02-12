@@ -107,7 +107,7 @@ def register_callbacks(app):
     def create_record(n_clicks,cob,src_type,src,price,un):
         if n_clicks:
             try:
-                result= gold_prices.set_gold_price(price,pd.to_datetime(cob),src,src_type,un)
+                result= gold_prices.set_gold_price(float(price),pd.to_datetime(cob),src,src_type,un)
                 status= f"Inserted doc ID:{str(result['InsertedID'])} "
             except Exception as e:
                 status=f"Error in inserting doc :  {e}"
