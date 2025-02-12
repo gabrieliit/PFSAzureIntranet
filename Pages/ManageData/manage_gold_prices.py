@@ -92,6 +92,11 @@ def register_callbacks(app):
 
         if triggered_id == "refdata-btn-fetch-xau-price":
             # get the gold price for cob date
+            if not cob_date:
+                msg="Please enter a COB date to fetch gold price"
+                alert_color="danger"
+                children=dbc.Alert(msg,color=alert_color)
+                return children
             result=gold_prices.get_gold_price(pd.to_datetime(cob_date))
             if result["APICall"]:#if price was not available in MDB, would have trigerred a call to API
                 if result["APIResponse"]["Status"]=="Success":
