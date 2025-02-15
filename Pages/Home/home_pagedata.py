@@ -1,6 +1,6 @@
 from dateutil.relativedelta import relativedelta as rd
 from CommonDataServices import transform_utils as tu
-from ConsumerServices.DatasetTools.DatasetDefs import ref_data
+from ConsumerServices.DatasetTools.DatasetDefs import gold_prices
 
 agg_pipe_outputs={
     "Accounts":
@@ -645,19 +645,46 @@ post_procs={
 def get_fact(fact_def,filters={},dims={},fact_coll=None):
     if fact_def["SourceType"]=="RefData":
         if fact_def["Source"]=="GoldPrice":
-            return ref_data.get_gold_price(filters["AsofDate"])["Results"][0]["Value"]
+            val= fact_coll["RefData"][filters["AsofDate"].strftime("%d-%b-%Y")]["GoldPrice"]
+            msg=f"Gold Price fetched from home page data ref data store"
+            status="Success"
     elif fact_def["SourceType"]=="FactDef":
         if fact_def["Source"]=="Params":
-            return fact_def["Params"]
+            try:
+                val=fact_def["Params"]
+                msg=f"Sourced fact from params attribute of {fact_def}"
+                status="Success"
+            except KeyError:
+                val=None
+                msg=f"{fact_def} does not have a Params attribute although Source and Source Type are defined as FactDef, Params"
+                status="Failed"
     elif fact_def["SourceType"]=="Facts":
         #read from fact_coll, which is the page data dict from home_page.py
         try:
             mult_def=fact_def["Multiplier"]
-            mult=get_fact(mult_def,filters,dims,fact_coll)#recursive call to get multiplier
+            mult=get_fact(mult_def,filters,dims,fact_coll)["Value"]#recursive call to get multiplier
         except KeyError as e:
             mult=1.0
         if fact_def["Level"]=="L1":
-            return fact_coll["Facts_L1"][filters["AsofDate"].strftime("%d-%b-%Y")][fact_def["PageDataItem"]]*mult
+            try:
+                val= fact_coll["Facts_L1"][filters["AsofDate"].strftime("%d-%b-%Y")][fact_def["PageDataItem"]]*mult
+                status="success"
+                msg=f"{fact_def['PageDataItem']} for cob {filters['AsofDate'].strftime('%d-%b-%Y')} found in Level 1 of home page data facts"
+            except KeyError:
+                val=None
+                status="Failed"
+                msg=f"{fact_def['PageDataItem']} for cob {filters['AsofDate'].strftime('%d-%b-%Y')} not found in Level 1 of home page data facts"
         elif fact_def["Level"]=="L2":
-            return fact_coll["Facts_L2"][filters["AsofDate"].strftime("%d-%b-%Y")][fact_def["PageDataItem"]]*mult
-        return f"Fact not implemented for type {fact_def['SourceType']}"
+            try:
+                val= fact_coll["Facts_L2"][filters["AsofDate"].strftime("%d-%b-%Y")][fact_def["PageDataItem"]]*mult
+                status="success"
+                msg=f"{fact_def['PageDataItem']} for cob {filters['AsofDate'].strftime('%d-%b-%Y')} found in Level 2 of home page data facts"
+            except KeyError:
+                val=None
+                status="Failed"
+                msg=f"{fact_def['PageDataItem']} for cob {filters['AsofDate'].strftime('%d-%b-%Y')} not found in Level 2 of home page data facts"
+    else:
+        val=None
+        status="Failed"
+        msg=f"Fact not implemented for type {fact_def['SourceType']}"
+    return {"Value":val,"Status":status,"Message":msg}

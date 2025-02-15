@@ -8,9 +8,10 @@ from flask import session,url_for
 import os
 # import required project modules
 from Pages import scratch, shared_components as sc, transactions_layout
-from Pages import user_auth_flow,styles,layouts_config,dataloader,load_jobs_inv,accounts,customers
+from Pages import user_auth_flow,styles,layouts_config,accounts,customers
 from Pages.Forms import forms_config
 from Pages.Home import home_layout
+from Pages.ManageData import dataloader, load_jobs_inv,manage_gold_prices
 
 
 def parse_url_params(url):
@@ -93,10 +94,12 @@ def register_callbacks(app):
                 pg_content= html.Div([dcc.Location(id="redirect_to_logout",href="/logout")])
             elif pathname=='/scratch':
                 pg_content=scratch.draw_page_content()
-            elif pathname=='/dataloader':
+            elif pathname=='/managedata/dataloader':
                 pg_content=dataloader.draw_page_content()
-            elif pathname=='/dataloadjobs':
+            elif pathname=='/managedata/dataloadjobs':
                 pg_content=load_jobs_inv.draw_page_content()
+            elif pathname=='/managedata/goldprices':
+                pg_content=manage_gold_prices.draw_page_content()            
             elif pathname=='/accounts':
                 pg_content=accounts.draw_page_content()
             elif pathname=='/customers':

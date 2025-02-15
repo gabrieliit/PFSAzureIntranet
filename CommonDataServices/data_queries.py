@@ -20,6 +20,9 @@ class DataQuery():
                 return df
     
     def aggregate(self,dataset,agg_pipe):
-        cursor=self.db[dataset].aggregate(agg_pipe)
-        df=du.mdb_query_postproc(cursor)
+        try:
+            cursor=self.db[dataset].aggregate(agg_pipe)
+            df=du.mdb_query_postproc(cursor)
+        except Exception as e:
+            print(e)
         return df
