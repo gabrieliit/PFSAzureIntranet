@@ -1,4 +1,4 @@
-from Pages import scratch, transactions_layout,user_auth_flow,index,accounts,customers
+from Pages import scratch, transactions_layout,user_auth_flow,index,accounts,customers,kri_layout
 from Pages.Home import home_layout
 from Pages.ManageData import dataloader, load_jobs_inv,manage_gold_prices
 def register_layout_callbacks(app):
@@ -11,6 +11,8 @@ def register_layout_callbacks(app):
     accounts.register_callbacks(app),
     customers.register_callbacks(app),
     transactions_layout.register_callbacks(app)
+    kri_layout.register_callbacks(app)
+
 
 def validate_layouts():
     #return a list of all layouts for layout validation in the app
@@ -23,5 +25,6 @@ def validate_layouts():
         manage_gold_prices.draw_page_content(),
         accounts.draw_page_content(),
         customers.draw_page_content(),
-        transactions_layout.draw_page_content(),        
+        transactions_layout.draw_page_content(),
+        kri_layout.draw_page_content(),    
     ]
