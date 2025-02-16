@@ -60,6 +60,7 @@ side_bar = html.Div(
                 dbc.NavLink("Accounts", href="/accounts", active=False),
                 dbc.NavLink("Customers", href="/customers", active=False),
                 dbc.NavLink("Transactions", href="/transactions", active=False),
+                dbc.NavLink("KRI", href="/kri", active=False),
                 dbc.DropdownMenu
                 (
                     [

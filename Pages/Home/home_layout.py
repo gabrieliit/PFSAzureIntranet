@@ -505,27 +505,28 @@ def draw_page_content(ext=[],pd_refact={}):
     #acc_count=locale.format_string("%d",page_data["TotalAccounts"]["AccountCount"][0],grouping=True)
     homepage_content=html.Div(
         [
-            html.Div(
-                [
-                    html.Label("Last fetched gold price :", style={"margin-right":"10px"}),
-                    dcc.Input(value=f"{price}",style={"margin-right":"10px"},id="home-tb-price-XAU-display",readOnly=True),
-                    html.Label(f"Sourced from : {price_source} on {date}",id="home-lbl-price-XAU-source"),
-                    dbc.Button("Fetch Latest Gold Price", id="home-btn-fetch-xau-latest"),
-                    html.Div(id="home-div-price-XAU-display"),
-                    dcc.ConfirmDialog(
-                        id="home-confirm-dialog-xau-price-persist",
-                        message="Do you want to save the data to a local file?"
-                    ),
-                    dcc.Store(id="home-store-fetched-xau-price-latest"),
-                    html.Hr(),
-                ],
-                style={"margin-bottom":"75px"}
-            ),
+            # html.Div(
+            #     [
+            #         html.Label("Last fetched gold price :", style={"margin-right":"10px"}),
+            #         dcc.Input(value=f"{price}",style={"margin-right":"10px"},id="home-tb-price-XAU-display",readOnly=True),
+            #         html.Label(f"Sourced from : {price_source} on {date}",id="home-lbl-price-XAU-source"),
+            #         dbc.Button("Fetch Latest Gold Price", id="home-btn-fetch-xau-latest"),
+            #         html.Div(id="home-div-price-XAU-display"),
+            #         dcc.ConfirmDialog(
+            #             id="home-confirm-dialog-xau-price-persist",
+            #             message="Do you want to save the data to a local file?"
+            #         ),
+            #         dcc.Store(id="home-store-fetched-xau-price-latest"),
+            #         html.Hr(),
+            #     ],
+            #     style={"margin-bottom":"75px"}
+            # ),
             html.Div(
                 [                
+                    html.H2("Generate Summary Report"),
                     dbc.Row(
                         [
-                            dbc.Col(html.H6(id="home-h5-dashboard-cob",children=f"Select COB : ",style={'color':'blue'}),width=3),
+                            dbc.Col(html.H6(id="home-h5-dashboard-cob",children=f"Selected COB : pick rep cob or enter custom date ",style={'color':'blue'}),width=3),
                             dbc.Col(html.H6("Pick/Enter custom COB (dd-mm-yyyy)",style={'display': 'flex', 'justify-content': 'flex-end','color':'blue'},),width=3),
                             dbc.Col(
                                 dcc.DatePickerSingle(

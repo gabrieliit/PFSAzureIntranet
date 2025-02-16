@@ -7,7 +7,7 @@ from urllib.parse import parse_qs
 from flask import session,url_for
 import os
 # import required project modules
-from Pages import scratch, shared_components as sc, transactions_layout
+from Pages import scratch, shared_components as sc, transactions_layout,kri_layout
 from Pages import user_auth_flow,styles,layouts_config,accounts,customers
 from Pages.Forms import forms_config
 from Pages.Home import home_layout
@@ -106,6 +106,8 @@ def register_callbacks(app):
                 pg_content=customers.draw_page_content()
             elif pathname=='/transactions':
                 pg_content=transactions_layout.draw_page_content()
+            elif pathname=='/kri':
+                pg_content=kri_layout.draw_page_content()
             # Add more pages as needed
             else:
                 pg_content= [html.Label(f'404 - {pathname} this page is under development',style=styles.CONTENT_STYLE)]
