@@ -34,20 +34,13 @@ AccountsAggs={"CheckSumAccounts":[
             }        
         }        
     ],
-        "CheckCountLoanStatus":[
-        {
-            "$unwind":
-            {
-                "path": "$Source"
-            }
-        },
+    "CheckCountLoanStatus":[
         {
             "$group":
             {
                 "_id": 
                 {
-                    "LoanStatus": "$LoanStatus",
-                    "Source": "$Source"
+                    "Source": "$LoanClosureSource"
                 },
                 "CheckCount": {"$sum": 1}
             }
@@ -55,7 +48,6 @@ AccountsAggs={"CheckSumAccounts":[
         {
             "$project": 
             {
-                "LoanStatus": "$_id.LoanStatus",
                 "Source": "$_id.Source",
                 "CheckCount": 1,
                 "_id": 0

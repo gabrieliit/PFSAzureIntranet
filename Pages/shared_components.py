@@ -64,9 +64,9 @@ side_bar = html.Div(
                 dbc.DropdownMenu
                 (
                     [
-                        dbc.DropdownMenuItem("Data Loader", href="managedata/dataloader", active=False),
-                        dbc.DropdownMenuItem("Data Load Jobs", href="managedata/dataloadjobs", active=False),
-                        dbc.DropdownMenuItem("Manage Gold Prices", href="managedata/goldprices", active=False),                        
+                        dbc.DropdownMenuItem("Data Loader", href="/managedata/dataloader", active=False),
+                        dbc.DropdownMenuItem("Data Load Jobs", href="/managedata/dataloadjobs", active=False),
+                        dbc.DropdownMenuItem("Manage Gold Prices", href="/managedata/goldprices", active=False),                        
                     ],
                     label="Manage Data", 
                     nav=True,
