@@ -166,6 +166,8 @@ class DataTransformer():
                                     except:
                                         #Attribute doesnt have alt defs, just pull the value from mapped column
                                         record[attrib]=row[rule["AttribName"][i]]
+                                elif rule["Source"][i]=="Constant":
+                                    record[attrib]=tu.get_constants(self,rule["ConstName"][i])
                                 #process attribut mappings, ie where the column is filled with the same value 
                                 elif rule["Source"][i]=="Map":
                                     if type(rule["MapName"][i][rule["AttribName"][i]])==dict:
@@ -194,7 +196,7 @@ class DataTransformer():
                                 #process COB Date mappings
                                 elif rule["Source"][i]=="COBDate":
                                     record[attrib]=pd.to_datetime(self.cob_date)
-                        record["Source"]=self.source_filename
+                        #record["Source"]=self.source_filename
                         if add_record:
                             target_records[target].append(record)
                         add_record=True#reset flag for next record 
@@ -388,7 +390,7 @@ class DataTransformer():
                         else:
                             mdb_sum="NA"
                             file_sum="NA"
-                        #calc filecount
+                        #calc checkcount
                         try:
                             mdb_count=int(mdb_val["CheckCount"].iloc[0])
                         except IndexError:

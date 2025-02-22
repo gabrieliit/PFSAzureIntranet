@@ -87,7 +87,6 @@ TransformMap={
                 "Source":"Attrib",
                 "AttribName":"GL Date"
             },
-
             "LoanStatus":
             {
                 "Source":"Attrib",
@@ -96,17 +95,7 @@ TransformMap={
                     "CondType":"RowInclCond",
                     "CondIdx":0,
                 },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"             
-            },            
-            "LoanClosureDate":
-            {
-                "Source":"Attrib",
-                "AttribName":"Rec. Dt",
-                "Condition":{
-                    "CondType":"RowInclCond",
-                    "CondIdx":0,
-                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"
-                "DependencyOrder":1
-            },
+            },  
             "PrincPaymentAmounts":
             {
                 "Source":"Attrib",
@@ -124,7 +113,28 @@ TransformMap={
                     "CondType":"RowInclCond",
                     "CondIdx":1,
                 },#only add Principle payment if the Princi Rec >0.0 in source file      
+            },          
+            "LoanClosureDate":
+            {
+                "Source":"Attrib",
+                "AttribName":"Rec. Dt",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add LoanCLosureDate in the record if the Loan Satus attribute =="CL"
+                "DependencyOrder":1
             },
+            "LoanClosureSource":
+            {
+                "Source":"Constant",
+                "ConstName":"FileName",
+                "Condition":{
+                    "CondType":"RowInclCond",
+                    "CondIdx":0,
+                },#only add LoanCLosureSource in the record if the Loan Satus attribute =="CL"
+                "DependencyOrder":1
+            },
+
         },
         "UpsertFilters":["GLNo"],
         "IncludeCriteria":
@@ -145,7 +155,7 @@ TransformMap={
                 "AggPipeline":"CheckCountLoanStatus",
                 "AggResultsMap":
                 [
-                    {"ST":{"ID":{"LoanStatus":"CL"},"AggField":None,"FileRowFilters":{"ST":"CL"},"CompoundPK":["GL. No."]}},#AggField is None so only count will be checked (this is added by default to check agg op hnece not specified)
+                    {"ST":{"ID":{},"AggField":None,"FileRowFilters":{"ST":"CL"},"CompoundPK":["GL. No."]}},#AggField is None so only count will be checked (this is added by default to check agg op hnece not specified)
                 ]
             }
         ]
