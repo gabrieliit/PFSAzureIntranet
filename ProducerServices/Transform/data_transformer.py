@@ -196,7 +196,7 @@ class DataTransformer():
                                 #process COB Date mappings
                                 elif rule["Source"][i]=="COBDate":
                                     record[attrib]=pd.to_datetime(self.cob_date)
-                        #record["Source"]=self.source_filename
+                        record["Source"]=self.source_filename
                         if add_record:
                             target_records[target].append(record)
                         add_record=True#reset flag for next record 
