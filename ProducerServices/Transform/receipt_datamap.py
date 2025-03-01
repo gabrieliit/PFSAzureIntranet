@@ -134,9 +134,9 @@ TransformMap={
                 },#only add LoanCLosureSource in the record if the Loan Satus attribute =="CL"
                 "DependencyOrder":1
             },
-
         },
         "UpsertFilters":["GLNo"],
+        "UpdateSource":False,
         "IncludeCriteria":
         [
             {
