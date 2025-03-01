@@ -5,7 +5,7 @@ from Pages import styles
 
 # Define your company logo and name (customize as needed)
 company_logo_url = "https://example.com/logo.png"
-company_name = "Acme Company"
+company_name = "Puthiyaveetil Financial Services"
 external_stylesheets=[dbc.themes.BOOTSTRAP]
 
 #utility function to convert df to a dash table
@@ -42,7 +42,7 @@ def draw_top_banner(login=False,user_name=""):
         href="/login"
         user_label=f""
     top_banner=[
-            html.H1(company_name, style={"display": "inline-block", "margin-left": "10px"}),
+            html.H1(company_name, style={"display": "inline-block", "margin-left": "10px","color":"blue"}),
             html.Div(f"{user_label}",id="topBanner_lbl_user", style={"float": "right", "margin-right": "20px"}),
             dcc.Link(f"{link_label}",id="topBanner_link_login", href=f"{href}", style={"float": "right", "margin-right": "10px"}),
         ]
@@ -64,9 +64,9 @@ side_bar = html.Div(
                 dbc.DropdownMenu
                 (
                     [
-                        dbc.DropdownMenuItem("Data Loader", href="managedata/dataloader", active=False),
-                        dbc.DropdownMenuItem("Data Load Jobs", href="managedata/dataloadjobs", active=False),
-                        dbc.DropdownMenuItem("Manage Gold Prices", href="managedata/goldprices", active=False),                        
+                        dbc.DropdownMenuItem("Data Loader", href="/managedata/dataloader", active=False),
+                        dbc.DropdownMenuItem("Data Load Jobs", href="/managedata/dataloadjobs", active=False),
+                        dbc.DropdownMenuItem("Manage Gold Prices", href="/managedata/goldprices", active=False),                        
                     ],
                     label="Manage Data", 
                     nav=True,

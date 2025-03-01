@@ -56,6 +56,8 @@ def get_constants(data_transformer, const):
         result=session["user"]["name"]
     elif const=="TimeNow":
         result=dt.now()
+    elif const=="FileName":
+        result=data_transformer.source_filename
     return result
 
 def cast_to_type(val, cast_type):

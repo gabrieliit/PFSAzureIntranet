@@ -39,7 +39,7 @@ def draw_page_content():
                             id='dataloader-dp-sel-cob-date',
                             display_format='DD-MM-YYYY',
                             style={"width":"200px"},
-                            date=date(2022,3,31)
+                            date=date.today()
                         ),
                         width=3
                     ),

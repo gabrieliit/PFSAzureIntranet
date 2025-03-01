@@ -23,7 +23,7 @@ def draw_page_content():
                 dbc.Col(dbc.RadioItems(options=[
                     {"label":"Last Run","value":1},
                     {"label":"Last 5 Runs","value":2},
-                    {"label":"All Runs","value":3},
+                    #{"label":"All Runs","value":3}, Removed this option. Added a story to backlog to search jobs by execution date range
                 ], 
                 value=1,
                 inline=True,
