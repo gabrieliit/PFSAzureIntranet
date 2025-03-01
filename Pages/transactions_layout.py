@@ -43,7 +43,7 @@ def draw_page_content(ext=[]):
                     dbc.Row(
                         [
                             dbc.Col(dbc.Label("Date"),width=2,style={"font-size":"8"}),
-                            dbc.Col(dbc.Input(placeholder="Enter transaction date",id="transactions-search-txn-input-rec-date"),width=3),
+                            dbc.Col(dbc.Input(placeholder="Enter Rec. date (dd-mmm-yyyy)",id="transactions-search-txn-input-rec-date"),width=3),
                         ]
                     ),
                     dbc.Button("Find transactions",id="transactions-btn-get-transaction-data"),
@@ -108,17 +108,21 @@ def register_callbacks(app):
     )
     def get_transaction_data(n_clicks_get,gl_no, rec_no,date):
         #set mongo db conn details
-        attribs=["GLNo","RecNo.","Date"]
-        values=[gl_no,rec_no,date]
+        attribs=["GLNo","RecNo","Date"]
+        try:
+            values=[gl_no,rec_no,pd.to_datetime(date,format="%d-%b-%Y") ]
+        except ValueError:
+            children=dbc.Alert("Please check date is entered in dd-mmm-yyyy format, eg, 01-Jan-2025",color="danger")
+            return children
         filters={}
         for attrib,value in zip(attribs,values):
-            if value:
+            if value and value !='':
                 filters[attrib]=value
         if n_clicks_get:
             source_obj=de.source_factory("Transactions",dataset_type="Consumer",db_name="PFS_MI")
-            source_obj.load_data(filters)
+            df=source_obj.find(filters)["Results"]
             # Fetch data from MongoDB and convert to DataFrame
-            children=sc.df_to_dash_table(source_obj.data,'transactions-tbl-sample-mflix-comments')
+            children=sc.df_to_dash_table(df,'transactions-tbl-sample-mflix-comments')
         else:
             children= dash.no_update
         return children
