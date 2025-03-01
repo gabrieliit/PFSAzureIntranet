@@ -196,7 +196,11 @@ class DataTransformer():
                                 #process COB Date mappings
                                 elif rule["Source"][i]=="COBDate":
                                     record[attrib]=pd.to_datetime(self.cob_date)
-                        record["Source"]=self.source_filename
+                        try: 
+                            if self.rules[target]["UpdateSource"]:record["Source"]=self.source_filename
+                        except KeyError:
+                            #default behaviour is to add source filename to the record if its not specifically disabled in the datamap
+                            record["Source"]=self.source_filename
                         if add_record:
                             target_records[target].append(record)
                         add_record=True#reset flag for next record 
