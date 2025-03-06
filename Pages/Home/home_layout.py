@@ -213,6 +213,11 @@ def draw_summary_dashboard(rep_cob):
         children=[dbc.Alert(msg,color="danger")]
     else:
         pd_refact=calc_results["Results"]
+        for metric, vals in pd_refact.items():
+            for cob, val in vals.items():
+                #replace nan and nan% values with 0
+                if pd.isna(val) or val=="nan%":
+                    pd_refact[metric][cob]=0.0
         children= [
             html.Div(
                 [ 

@@ -80,7 +80,7 @@ TransformMap={
                 "Condition":{
                     "CondType":"RowInclCond",
                     "CondIdx":0,
-                },#only add CollWeight in the record if the Loan Satus attribute =="CL"       
+                },#only add CollWeight in the record if the Loan Status attribute =="CL"       
             },
             "LoanStartDate":
             {
