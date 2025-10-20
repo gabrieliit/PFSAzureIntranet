@@ -6,3 +6,19 @@ user_auth_flow_log.txt
 **/*.pyc
 venv/
 .env
+# local/dev artifacts
+.vscode/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+venv/
+.env
+
+# local/dev artifacts
+.vscode/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+venv/
+.env
+
