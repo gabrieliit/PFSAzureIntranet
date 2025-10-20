@@ -1,0 +1,12 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/IntranetAzure/.venv/Scripts/python.exe",
+    "terminal.integrated.env.windows": {
+        "PATH": "${workspaceFolder}\\IntranetAzure\\.venv\\Scripts;${env:PATH}",
+        "VIRTUAL_ENV": "${workspaceFolder}\\IntranetAzure\\.venv"
+    },
+    "python.terminal.activateEnvironment": true
+}
+
+
+
+
