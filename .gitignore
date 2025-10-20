@@ -1,24 +1,12 @@
-user_auth_flow_log.txt
-# local/dev artifacts
+﻿# local/dev artifacts
 .vscode/
 **/.venv/
 **/__pycache__/
 **/*.pyc
 venv/
 .env
-# local/dev artifacts
-.vscode/
-**/.venv/
-**/__pycache__/
-**/*.pyc
-venv/
-.env
-
-# local/dev artifacts
-.vscode/
-**/.venv/
-**/__pycache__/
-**/*.pyc
-venv/
-.env
-
+# node & misc (safe)
+node_modules/
+dist/
+build/
+.DS_Store
