@@ -1,0 +1,268 @@
+Index: PFSIntranetAzFnApp/local.settings.json
+===================================================================
+diff --git a/PFSIntranetAzFnApp/local.settings.json b/PFSIntranetAzFnApp/local.settings.json
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/local.settings.json	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,7 +0,0 @@
+-{
+-  "IsEncrypted": false,
+-  "Values": {
+-    "FUNCTIONS_WORKER_RUNTIME": "python",
+-    "AzureWebJobsStorage": "UseDevelopmentStorage=true"
+-  }
+-}
+\ No newline at end of file
+Index: PFSIntranetAzFnApp/requirements.txt
+===================================================================
+diff --git a/PFSIntranetAzFnApp/requirements.txt b/PFSIntranetAzFnApp/requirements.txt
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/requirements.txt	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,9 +0,0 @@
+-# Do not include azure-functions-worker as it may conflict with the Azure Functions platform
+-
+-azure-functions
+-cloudevents
+-azure-eventgrid
+-azure-identity
+-azure-core
+-
+-
+Index: PFSIntranetAzFnApp/function_app.py
+===================================================================
+diff --git a/PFSIntranetAzFnApp/function_app.py b/PFSIntranetAzFnApp/function_app.py
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/function_app.py	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,28 +0,0 @@
+-import azure.functions as func
+-import json
+-from azure.core.messaging import CloudEvent
+-from azure.identity import ClientSecretCredential
+-from azure.eventgrid import EventGridPublisherClient
+-
+-app=func.FunctionApp
+-
+-@app.function_name(name="EHDashUITestEvent")
+-@app.event_grid_trigger(arg_name="event")
+-def main(event:func.EventGridEvent):
+-    result = json.dumps({
+-        'id': event.id,
+-        'data': event.get_json(),
+-        'topic': event.topic,
+-        'subject': event.subject,
+-        'event_type': event.event_type,
+-    })
+-    #create response event
+-    event = CloudEvent \
+-    (
+-        source="https://pfsintranet-azfnapp.azurewebsites.net/runtime/webhooks/EventGrid?functionName=EHDashUITestEvent&code=SNN3nOoTWKfxZb4KnlqhMxmQ9RknKRwupW7MWyUNqoNOAzFukWYaFQ==",
+-        type="fn.response.test",
+-        data=result
+-    )
+-    return f'Cloud Event object : {event.__dict__}'
+-
+-
+Index: PFSIntranetAzFnApp/getting_started.md
+===================================================================
+diff --git a/PFSIntranetAzFnApp/getting_started.md b/PFSIntranetAzFnApp/getting_started.md
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/getting_started.md	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,30 +0,0 @@
+-## Getting Started with Azure Function
+-### Last updated: March 8th 2021
+-
+-#### Project Structure
+-The main project folder (<project_root>) can contain the following files:
+-
+-* **local.settings.json** - Used to store app settings and connection strings when running locally. This file doesn't get published to Azure. To learn more, see [local.settings.file](https://aka.ms/azure-functions/python/local-settings).
+-* **requirements.txt** - Contains the list of Python packages the system installs when publishing to Azure.
+-* **host.json** - Contains global configuration options that affect all functions in a function app. This file does get published to Azure. Not all options are supported when running locally. To learn more, see [host.json](https://aka.ms/azure-functions/python/host.json).
+-* **.vscode/** - (Optional) Contains store VSCode configuration. To learn more, see [VSCode setting](https://aka.ms/azure-functions/python/vscode-getting-started).
+-* **.venv/** - (Optional) Contains a Python virtual environment used by local development.
+-* **Dockerfile** - (Optional) Used when publishing your project in a [custom container](https://aka.ms/azure-functions/python/custom-container).
+-* **tests/** - (Optional) Contains the test cases of your function app. For more information, see [Unit Testing](https://aka.ms/azure-functions/python/unit-testing).
+-* **.funcignore** - (Optional) Declares files that shouldn't get published to Azure. Usually, this file contains .vscode/ to ignore your editor setting, .venv/ to ignore local Python virtual environment, tests/ to ignore test cases, and local.settings.json to prevent local app settings being published.
+-
+-Each function has its own code file and binding configuration file ([**function.json**](https://aka.ms/azure-functions/python/function.json)).
+-
+-#### Developing your first Python function using VS Code
+-
+-If you have not already, please checkout our [quickstart](https://aka.ms/azure-functions/python/quickstart) to get you started with Azure Functions developments in Python. 
+-
+-#### Publishing your function app to Azure 
+-
+-For more information on deployment options for Azure Functions, please visit this [guide](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-python#publish-the-project-to-azure).
+-
+-#### Next Steps
+-
+-* To learn more about developing Azure Functions, please visit [Azure Functions Developer Guide](https://aka.ms/azure-functions/python/developer-guide).
+-
+-* To learn more specific guidance on developing Azure Functions with Python, please visit [Azure Functions Developer Python Guide](https://aka.ms/azure-functions/python/python-developer-guide).
+\ No newline at end of file
+Index: PFSIntranetAzFnApp/MyFirstAzFn/function.json
+===================================================================
+diff --git a/PFSIntranetAzFnApp/MyFirstAzFn/function.json b/PFSIntranetAzFnApp/MyFirstAzFn/function.json
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/MyFirstAzFn/function.json	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,20 +0,0 @@
+-{
+-  "scriptFile": "__init__.py",
+-  "bindings": [
+-    {
+-      "authLevel": "function",
+-      "type": "httpTrigger",
+-      "direction": "in",
+-      "name": "req",
+-      "methods": [
+-        "get",
+-        "post"
+-      ]
+-    },
+-    {
+-      "type": "http",
+-      "direction": "out",
+-      "name": "$return"
+-    }
+-  ]
+-}
+\ No newline at end of file
+Index: PFSIntranetAzFnApp/MyFirstAzFn/__init__.py
+===================================================================
+diff --git a/PFSIntranetAzFnApp/MyFirstAzFn/__init__.py b/PFSIntranetAzFnApp/MyFirstAzFn/__init__.py
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/MyFirstAzFn/__init__.py	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,23 +0,0 @@
+-import logging
+-import azure.functions as func
+-
+-
+-def main(req: func.HttpRequest) -> func.HttpResponse:
+-    logging.info('Python HTTP trigger function processed a request.')
+-
+-    name = req.params.get('name')
+-    if not name:
+-        try:
+-            req_body = req.get_json()
+-        except ValueError:
+-            pass
+-        else:
+-            name = req_body.get('name')
+-
+-    if name:
+-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
+-    else:
+-        return func.HttpResponse(
+-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
+-             status_code=200
+-        )
+Index: PFSIntranetAzFnApp/EHDashUITestEventold/function.json
+===================================================================
+diff --git a/PFSIntranetAzFnApp/EHDashUITestEventold/function.json b/PFSIntranetAzFnApp/EHDashUITestEventold/function.json
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/EHDashUITestEventold/function.json	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,19 +0,0 @@
+-{
+-  "scriptFile": "__init__.py",
+-  "bindings":
+-  [
+-    {
+-      "type": "eventGridTrigger",
+-      "name": "event",
+-      "direction": "in",
+-      "topicEndpointUri": "https://pfsintranetdashuicloudevents.southindia-1.eventgrid.azure.net/api/events",
+-      "topicKeySettingName": "AzureWebJobsEventGridExtensionConfig",
+-      "eventSchema": "cloudeventsV1_0",
+-      "authLevel": "anonymous",
+-      "eventPattern":
+-      {
+-        "eventType": "test_event"
+-      }
+-    }
+-  ]
+-}
+\ No newline at end of file
+Index: PFSIntranetAzFnApp/host.json
+===================================================================
+diff --git a/PFSIntranetAzFnApp/host.json b/PFSIntranetAzFnApp/host.json
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/host.json	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,15 +0,0 @@
+-{
+-  "version": "2.0",
+-  "logging": {
+-    "applicationInsights": {
+-      "samplingSettings": {
+-        "isEnabled": true,
+-        "excludedTypes": "Request"
+-      }
+-    }
+-  },
+-  "extensionBundle": {
+-    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+-    "version": "[3.*, 4.0.0)"
+-  }
+-}
+\ No newline at end of file
+Index: PFSIntranetAzFnApp/.gitignore
+===================================================================
+diff --git a/PFSIntranetAzFnApp/.gitignore b/PFSIntranetAzFnApp/.gitignore
+deleted file mode 100644
+--- a/PFSIntranetAzFnApp/.gitignore	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
++++ /dev/null	(revision be27608448cf1b466504b68b9d57aea8471a3b86)
+@@ -1,48 +0,0 @@
+-bin
+-obj
+-csx
+-.vs
+-edge
+-Publish
+-
+-*.user
+-*.suo
+-*.cscfg
+-*.Cache
+-project.lock.json
+-
+-/packages
+-/TestResults
+-
+-/tools/NuGet.exe
+-/App_Data
+-/secrets
+-/data
+-.secrets
+-appsettings.json
+-local.settings.json
+-
+-node_modules
+-dist
+-
+-# Local python packages
+-.python_packages/
+-
+-# Python Environments
+-.env
+-.venv
+-env/
+-venv/
+-ENV/
+-env.bak/
+-venv.bak/
+-
+-# Byte-compiled / optimized / DLL files
+-__pycache__/
+-*.py[cod]
+-*$py.class
+-
+-# Azurite artifacts
+-__blobstorage__
+-__queuestorage__
+-__azurite_db*__.json
+\ No newline at end of file

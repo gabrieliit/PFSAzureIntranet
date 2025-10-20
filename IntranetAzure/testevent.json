@@ -1,0 +1,13 @@
+[
+  {
+    "id": "1800",
+    "eventType": "recordInserted",
+    "subject": "myapp/vehicles/motorcycles",
+    "eventTime": "2024-04-12T17:59:08.135Z",
+    "data": {
+      "make": "Ducati",
+      "model": "Monster"
+    },
+    "dataVersion": "1.0"
+  }
+]
