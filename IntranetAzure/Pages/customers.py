@@ -4,7 +4,15 @@ import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import dash
 from dash import Input, Output,State,callback_context
-import dash_table
+# Import dash_table with compatibility fallback
+try:
+    import dash_table
+except ImportError:
+    try:
+        from dash import dash_table
+    except ImportError:
+        # Import compatibility module
+        from dash_table_compat import dash_table
 from datetime import datetime,timedelta
 import os
 import json

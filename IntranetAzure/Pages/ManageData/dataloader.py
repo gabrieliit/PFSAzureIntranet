@@ -3,7 +3,15 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash import Output, Input,State,callback_context
 import dash_bootstrap_components as dbc
-import dash_table
+# Import dash_table with compatibility fallback
+try:
+    import dash_table
+except ImportError:
+    try:
+        from dash import dash_table
+    except ImportError:
+        # Import compatibility module
+        from dash_table_compat import dash_table
 import pandas as pd
 import base64
 import io
