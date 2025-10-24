@@ -1,5 +1,5 @@
-# Apply pkgutil compatibility patch for Python 3.14
-import patch_pkgutil
+# Apply pkgutil compatibility patch for Python 3.14 (only needed locally)
+# import patch_pkgutil
 
 import dash
 import flask

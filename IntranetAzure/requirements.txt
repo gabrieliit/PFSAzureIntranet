@@ -9,7 +9,7 @@ patsy>=1.0.0
 
 # Web framework and UI
 flask>=3.0.0
-dash>=2.18.0,<3.0.0
+dash>=2.14.2,<3.0.0
 dash-html-components>=2.0.0
 dash-core-components>=2.0.0
 dash-bootstrap-components>=2.0.0
@@ -50,7 +50,7 @@ iniconfig>=2.3.0
 pluggy>=1.5.0
 
 # Additional dependencies
-typing-extensions>=4.15.0
+typing-extensions>=4.7.1,<5.0.0
 importlib-metadata>=8.7.0
 setuptools>=80.9.0
 wheel>=0.37.0
