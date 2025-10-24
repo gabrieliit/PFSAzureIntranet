@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Create and start virtual environment
         run: |
@@ -67,3 +67,4 @@ jobs:
           app-name: 'PFSIntranet'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_49D666F3E3034BFF8E49F10F2788EBEA }}
+          startup-command: 'python startup.py'
