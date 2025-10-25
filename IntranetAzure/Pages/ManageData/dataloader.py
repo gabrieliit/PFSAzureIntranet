@@ -10,8 +10,16 @@ except ImportError:
     try:
         from dash import dash_table
     except ImportError:
-        # Import compatibility module
-        from dash_table_compat import dash_table
+        # Create a mock dash_table module if both imports fail
+        import sys
+        from types import ModuleType
+        dash_table = ModuleType('dash_table')
+        # Add basic DataTable class
+        class DataTable:
+            def __init__(self, *args, **kwargs):
+                raise ImportError("dash_table.DataTable not available - please install dash-table package")
+        dash_table.DataTable = DataTable
+        sys.modules['dash_table'] = dash_table
 import pandas as pd
 import base64
 import io
